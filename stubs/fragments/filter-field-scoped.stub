@@ -1,0 +1,9 @@
+<div class="mb-2 {{column_width}}">
+    <label class="form-label small text-secondary mb-1">{{label}}</label>
+    <select name="filter[{{relation}}_{{target_fk}}]"
+            class="form-select form-select-sm"
+            data-filter="{{relation}}_{{target_fk}}">
+        <option value="">Todos</option>
+        {{scoped_options}}
+    </select>
+</div>

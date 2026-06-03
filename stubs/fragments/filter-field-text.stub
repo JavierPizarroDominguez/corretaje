@@ -1,0 +1,10 @@
+<div class="mb-2 {{column_width}}">
+    <label class="form-label small text-secondary mb-1">{{label}}</label>
+    <input type="text"
+           name="filter[{{field}}]"
+           class="form-control form-control-sm"
+           value=""
+           placeholder="{{label}}..."
+           data-filter="{{field}}"
+           autocomplete="off">
+</div>

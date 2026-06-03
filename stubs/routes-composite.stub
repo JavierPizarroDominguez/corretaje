@@ -1,0 +1,9 @@
+use App\Http\Controllers\Crud\{{Model}}Controller;
+
+Route::get('/{{route_base}}', [{{Model}}Controller::class, 'index'])->name('{{model_snake}}.index');
+Route::get('/{{route_base}}/create', [{{Model}}Controller::class, 'create'])->name('{{model_snake}}.create');
+Route::post('/{{route_base}}', [{{Model}}Controller::class, 'store'])->name('{{model_snake}}.store');
+Route::get('/{{route_base}}/{{pk_route_segments}}', [{{Model}}Controller::class, 'show'])->name('{{model_snake}}.show');
+Route::get('/{{route_base}}/{{pk_route_segments}}/edit', [{{Model}}Controller::class, 'edit'])->name('{{model_snake}}.edit');
+Route::put('/{{route_base}}/{{pk_route_segments}}', [{{Model}}Controller::class, 'update'])->name('{{model_snake}}.update');
+Route::delete('/{{route_base}}/{{pk_route_segments}}', [{{Model}}Controller::class, 'destroy'])->name('{{model_snake}}.destroy');

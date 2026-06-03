@@ -1,0 +1,1 @@
+                    <option value="{{enum_value}}" {{ ${{model}}->{{field}} === '{{enum_value}}' ? 'selected' : '' }}>{{enum_label}}</option>

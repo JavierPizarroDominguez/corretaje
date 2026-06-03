@@ -1,0 +1,50 @@
+        if ($request->has('{{model_snake}}')) {
+            $query = \App\Models\{{Model}}::query();
+            $found = collect();
+
+            // Buscar por cada ruta configurada
+            foreach ({{search_paths_array}} as $pathConfig) {
+                $path  = $pathConfig['path'];
+                $field = $pathConfig['field'];
+                $parts = explode('.', $path);
+
+                if (count($parts) === 1) {
+                    // Campo directo en la tabla
+                    $results = (clone $query)
+                        ->where($field, 'LIKE', "%{$q}%")
+                        ->limit(10)
+                        ->get();
+
+                    foreach ($results as $item) {
+                        $found->push([
+                            'id'    => $item->id,
+                            'tipo'  => '{{model_snake}}',
+                            'texto' => $this->resolveDisplay($item, $path, $field),
+                            'url'   => '/{{route_base}}/' . $item->id,
+                        ]);
+                    }
+                } else {
+                    // Ruta con relaciones: usar whereHas encadenado
+                    $results = (clone $query)
+                        ->whereHas($this->buildWhereHas($parts, $field, $q))
+                        ->limit(10)
+                        ->get();
+
+                    foreach ($results as $item) {
+                        $texto = $this->resolveDisplay($item, $path, $field);
+                        if ($texto) {
+                            $found->push([
+                                'id'    => $item->id,
+                                'tipo'  => '{{model_snake}}',
+                                'texto' => $texto,
+                                'url'   => '/{{route_base}}/' . $item->id,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            foreach ($found->unique('url') as $result) {
+                $resultados[] = $result;
+            }
+        }

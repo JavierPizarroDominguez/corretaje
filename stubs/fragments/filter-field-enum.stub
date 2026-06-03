@@ -1,0 +1,6 @@
+<div class="mb-2 {{column_width}}">
+    <label class="form-label small text-secondary mb-1">{{label}}</label>
+    <div class="d-flex flex-wrap gap-1">
+        {{enum_checkboxes}}
+    </div>
+</div>

@@ -1,0 +1,6 @@
+    {{-- [GEN:START:field_{{field}}] @gen:readonly --}}
+    <tr>
+        <td><b>{{label}}:</b></td>
+        <td>{{ ${{model}}->{{field}} }}</td>
+    </tr>
+    {{-- [GEN:END:field_{{field}}] --}}

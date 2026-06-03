@@ -1,0 +1,82 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>{{Model}}</h2>
+        <div class="d-flex gap-2">
+            <button type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    id="btn-toggle-filter-{{model_snake}}"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#filter-panel-{{model_snake}}"
+                    aria-expanded="false">
+                <i class="ti ti-filter"></i> Filtrar
+            </button>
+            <a href="/{{route_base}}/create" class="btn btn-primary">Agregar</a>
+        </div>
+    </div>
+
+    {{-- Panel de filtros colapsable --}}
+    @include('{{model_snake}}.filter')
+
+    {{-- Buscador del index: navega al show al seleccionar --}}
+    <div class="mb-3 position-relative">
+        <input id="input-buscador-index"
+               type="text"
+               class="form-control"
+               placeholder="Buscar {{model_title}}..."
+               autocomplete="off">
+        <div id="lista-buscador-index"
+             class="list-group position-absolute w-100"
+             style="z-index:1000;"></div>
+    </div>
+
+    <table class="table table-bordered table-hover" id="table-{{model_snake}}">
+        <thead class="table-light">
+            <tr>
+{{index_headers}}
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (${{models}} as ${{model}})
+            <tr>
+{{index_cells}}
+                <td>
+                    <a href="/{{route_base}}/{{pk_blade_segments}}" class="btn btn-sm btn-outline-primary">Revisar</a>
+                    <form method="POST" action="/{{route_base}}/{{pk_blade_segments}}" style="display:inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit"
+                                class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('¿Eliminar?')">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    <div class="pagination-area">
+        {{ ${{models}}->links() }}
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script src="{{ asset('js/filtros.js') }}"></script>
+<script>
+    buscador({
+        input: '#input-buscador-index',
+        list:  '#lista-buscador-index',
+        tipo:  '{{model_snake}}'
+    });
+
+    initFilters({
+        baseUrl: '/{{route_base}}',
+        tableSelector: '#table-{{model_snake}}',
+        filterPanel: '#filter-panel-{{model_snake}}'
+    });
+</script>
+@endpush

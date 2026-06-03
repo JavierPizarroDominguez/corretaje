@@ -1,0 +1,9 @@
+                <td>
+                    @if(${{model}}->{{fk_column}})
+                        <a href="/{{related_route}}/{{ ${{model}}->{{fk_column}} }}">
+                            {{ ${{model}}->{{relation}}->{{display_field}} ?? ${{model}}->{{fk_column}} }}
+                        </a>
+                    @else
+                        <span class="text-muted">—</span>
+                    @endif
+                </td>

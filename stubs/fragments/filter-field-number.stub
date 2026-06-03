@@ -1,0 +1,20 @@
+<div class="mb-2 {{column_width}}">
+    <label class="form-label small text-secondary mb-1">{{label}}</label>
+    <div class="input-group input-group-sm">
+        <input type="number"
+               name="filter[{{field}}_min]"
+               class="form-control"
+               value=""
+               placeholder="Mayor a"
+               step="any"
+               data-filter="{{field}}_min">
+        <span class="input-group-text">—</span>
+        <input type="number"
+               name="filter[{{field}}_max]"
+               class="form-control"
+               value=""
+               placeholder="Menor a"
+               step="any"
+               data-filter="{{field}}_max">
+    </div>
+</div>

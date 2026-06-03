@@ -1,0 +1,9 @@
+    buscador({
+        input: '#input-create-{{field_id}}',
+        list:  '#listaCreate{{FieldIdPascal}}',
+        tipo:  '{{related_table}}',
+        onSelect: function(item) {
+            document.getElementById('input-create-{{field_id}}').value = item.texto;
+            document.getElementById('input-create-{{field_id}}-id').value = item.id;
+        }
+    });

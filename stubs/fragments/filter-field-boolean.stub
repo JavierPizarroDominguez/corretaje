@@ -1,0 +1,10 @@
+<div class="mb-2 {{column_width}}">
+    <label class="form-label small text-secondary mb-1">{{label}}</label>
+    <select name="filter[{{field}}]"
+            class="form-select form-select-sm"
+            data-filter="{{field}}">
+        <option value="">Todos</option>
+        <option value="1">Sí</option>
+        <option value="0">No</option>
+    </select>
+</div>

@@ -1,0 +1,9 @@
+        <div class="mb-3">
+            <label class="form-label">{{label}}</label>
+            <select name="{{field}}" class="form-select">
+                <option value="">— Seleccionar —</option>
+                <option value="1" {{ old('{{field}}', ${{model}}->{{field}}) == '1' ? 'selected' : '' }}>Sí</option>
+                <option value="0" {{ old('{{field}}', ${{model}}->{{field}}) == '0' ? 'selected' : '' }}>No</option>
+            </select>
+            @error('{{field}}') <span class="text-danger">{{ $message }}</span> @enderror
+        </div>

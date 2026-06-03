@@ -1,0 +1,29 @@
+{{--
+    modal/show.blade.php — Contenido para el modal de {{Model}}
+
+    Uso desde la vista padre:
+        <button type="button" class="btn btn-primary btn-sm"
+                onclick="abrirModal({titulo: '{{Model}}', vista: 'vista-{{model}}-{{ ${{model}}->{{pk}} }}'})">
+            Ver
+        </button>
+
+        <div class="d-none">
+            <div id="vista-{{model}}-{{ ${{model}}->{{pk}} }}">
+                @include('{{model_snake}}.modal.show', ['{{model}}' => ${{model}}])
+            </div>
+        </div>
+--}}
+
+<table class="table table-bordered table-sm mb-3">
+{{field_rows}}
+</table>
+<div class="d-flex gap-2">
+    <a href="/{{route_base}}/{{ ${{model}}->{{pk}} }}"
+       class="btn btn-primary btn-sm">Ver completo</a>
+</div>
+
+@push('scripts')
+<script>
+{{buscador_calls}}
+</script>
+@endpush

@@ -1,0 +1,5 @@
+    buscador({
+        input: '#input-{{ ${{model}}->{{pk}} }}-{{FieldIdPascal}}',
+        list:  '#lista-{{ ${{model}}->{{pk}} }}-{{FieldIdPascal}}',
+        tipo:  '{{related_table}}'
+    });

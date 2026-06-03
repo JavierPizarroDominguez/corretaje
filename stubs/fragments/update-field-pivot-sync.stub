@@ -1,0 +1,8 @@
+        if (array_key_exists('{{input_name}}', $data)) {
+            ${{related_var}} = {{RelatedModel}}::firstOrCreate([
+                '{{display_field}}' => trim($data['{{input_name}}'])
+            ]);
+            ${{model}}->{{relation}}()->sync([
+                ${{related_var}}->id => ['{{pivot_column}}' => '{{pivot_value}}']
+            ]);
+        }

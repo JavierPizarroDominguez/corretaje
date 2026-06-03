@@ -1,0 +1,3 @@
+            if (isset($data['{{fk_column}}']) && $data['{{fk_column}}'] !== '__nuevo__') {
+                ${{model}}->{{fk_column}} = $data['{{fk_column}}'];
+            }

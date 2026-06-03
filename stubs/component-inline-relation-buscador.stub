@@ -1,0 +1,22 @@
+    {{-- [GEN:START:field_{{field_id}}] @gen:editable @gen:type:relation-buscador @gen:related:{{RelatedModel}} --}}
+    <tr>
+        <td><b>{{label}}:</b></td>
+        <td id="td-{{model}}-{{ ${{model}}->{{pk}} }}-{{field_id}}">
+            <a href="/{{related_route}}/{{ ${{model}}->{{relation}}->{{related_pk}} }}">
+                {{ ${{model}}->{{relation}}->{{display_field}} }}
+            </a>
+        </td>
+        <td id="btn-{{model}}-{{ ${{model}}->{{pk}} }}-{{field_id}}">
+            <button onclick="editarCampo('td-{{model}}-{{ ${{model}}->{{pk}} }}-{{field_id}}', 'btn-{{model}}-{{ ${{model}}->{{pk}} }}-{{field_id}}', 'form-{{model}}-{{ ${{model}}->{{pk}} }}-{{field_id}}', 'input-{{model}}-{{ ${{model}}->{{pk}} }}-{{field_id}}')">Editar</button>
+        </td>
+        <td id="form-{{model}}-{{ ${{model}}->{{pk}} }}-{{field_id}}" colspan="2" style="display:none;">
+            <form method="POST" action="/{{form_action}}">
+                @csrf
+                @method('PUT')
+                <input id="input-{{model}}-{{ ${{model}}->{{pk}} }}-{{field_id}}" name="{{input_name}}" value="{{ ${{model}}->{{relation}}->{{display_field}} }}" autocomplete="off">
+                <div id="lista-{{model}}-{{ ${{model}}->{{pk}} }}-{{FieldIdPascal}}" class="list-group position-absolute w-100" style="z-index:1000;"></div>
+                <input type="submit" value="Modificar">
+            </form>
+        </td>
+    </tr>
+    {{-- [GEN:END:field_{{field_id}}] --}}

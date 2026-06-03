@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Http\Controllers\Crud;
+
+use App\Http\Controllers\Controller;
+use App\Models\{{Model}};
+use Illuminate\Http\Request;
+{{model_uses}}
+
+class {{Model}}FilterController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = {{Model}}::query();
+
+        $filter = $request->input('filter', []);
+
+        // ── Aplicar filtros ────────────────────────────────────
+{{filter_conditions}}
+
+        ${{models}} = $query->paginate(20);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            $rows = view('{{model_snake}}.table', compact('{{models}}'))->render();
+            $pagination = ${{models}}->links()->toHtml();
+            return response()->json([
+                'rows' => $rows,
+                'pagination' => $pagination,
+                'total' => ${{models}}->total(),
+            ]);
+        }
+
+        return view('{{model_snake}}.index', compact('{{models}}'));
+    }
+}

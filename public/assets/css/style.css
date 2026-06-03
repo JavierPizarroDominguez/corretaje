@@ -1,0 +1,550 @@
+/* ========================================
+   style.css — InApp Dashboard
+   ========================================
+   Usage: Include after Bootstrap 5 CSS
+   ======================================== */
+
+/* --- Google Font --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* ========================================
+   BOOTSTRAP VARIABLE OVERRIDES
+   ======================================== */
+:root {
+  --gray-50: #fafafa;
+  --gray-100: #f5f5f5;
+  --gray-200: #e5e5e5;
+  --gray-300: #d4d4d4;
+  --gray-400: #a3a3a3;
+  --gray-500: #737373;
+  --gray-600: #525252;
+  --gray-700: #404040;
+  --gray-800: #262626;
+  --gray-900: #171717;
+  --gray-950: #0a0a0a;
+
+  --orange: #E66239;
+  --red: #FB2C36;
+  --green: #00C951;
+  --cyan: #00B8DB;
+  --yellow: #F0B100;
+
+  --bs-primary: #E66239;
+  --bs-primary-rgb: 230, 98, 57;
+  --bs-secondary: #525252;
+  --bs-secondary-rgb: 82, 82, 82;
+  --bs-success: #00C951;
+  --bs-success-rgb: 0, 201, 81;
+  --bs-info: #00B8DB;
+  --bs-info-rgb: 0, 184, 219;
+  --bs-warning: #F0B100;
+  --bs-warning-rgb: 240, 177, 0;
+  --bs-danger: #FB2C36;
+  --bs-danger-rgb: 251, 44, 54;
+  --bs-light: #f5f5f5;
+  --bs-light-rgb: 245, 245, 245;
+  --bs-dark: #262626;
+  --bs-dark-rgb: 38, 38, 38;
+
+  --bs-body-font-family: 'Poppins', sans-serif;
+  --bs-body-font-size: 0.875rem;
+  --bs-body-font-weight: 400;
+  --bs-body-line-height: 1.5;
+
+  --bs-border-color: #e5e5e5;
+  --bs-border-color-translucent: #e5e5e5;
+
+  --bs-link-color: #404040;
+  --bs-link-hover-color: #E66239;
+  --bs-link-decoration: none;
+  --bs-link-hover-decoration: none;
+
+  --bs-heading-font-weight: 400;
+
+  --bs-btn-padding-y: 0.5rem;
+  --bs-btn-padding-x: 0.875rem;
+
+  /* Shadow/elevation tokens */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.04), 0 4px 6px rgba(0,0,0,0.05);
+}
+
+/* ========================================
+   DEPTH SYSTEM — card shadows
+   ======================================== */
+.card {
+  box-shadow: var(--shadow-sm);
+}
+.modal-content {
+  box-shadow: var(--shadow-lg);
+}
+
+/* ========================================
+   CUSTOM FOCUS RING — orange primary
+   ======================================== */
+.form-control:focus,
+.form-select:focus {
+  border-color: rgba(230, 98, 57, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(230, 98, 57, 0.15);
+}
+
+/* ========================================
+   BUTTON TRANSITIONS & HOVER LIFT
+   ======================================== */
+.btn {
+  transition: all 0.15s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(230, 98, 57, 0.3);
+}
+
+/* ========================================
+   CUSTOM SPACER UTILITIES (extends Bootstrap)
+   Bootstrap spacers: 0-5 (0–3rem)
+   Custom spacers: 6-11
+   ======================================== */
+.mb-6 { margin-bottom: 2.5rem !important; }
+.mt-6 { margin-top: 2.5rem !important; }
+.my-6 { margin-top: 2.5rem !important; margin-bottom: 2.5rem !important; }
+.ms-6 { margin-left: 2.5rem !important; }
+.me-6 { margin-right: 2.5rem !important; }
+.m-6 { margin: 2.5rem !important; }
+.pb-6 { padding-bottom: 2.5rem !important; }
+.pt-6 { padding-top: 2.5rem !important; }
+.py-6 { padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; }
+.px-6 { padding-left: 2.5rem !important; padding-right: 2.5rem !important; }
+.p-6 { padding: 2.5rem !important; }
+
+.mb-7 { margin-bottom: 3rem !important; }
+.mt-7 { margin-top: 3rem !important; }
+.py-7 { padding-top: 3rem !important; padding-bottom: 3rem !important; }
+
+.mb-8 { margin-bottom: 4rem !important; }
+.py-8 { padding-top: 4rem !important; padding-bottom: 4rem !important; }
+
+.mb-9 { margin-bottom: 5rem !important; }
+.py-9 { padding-top: 5rem !important; padding-bottom: 5rem !important; }
+
+.mb-10 { margin-bottom: 6rem !important; }
+.py-10 { padding-top: 6rem !important; padding-bottom: 6rem !important; }
+
+.mb-11 { margin-bottom: 8rem !important; }
+.py-11 { padding-top: 8rem !important; padding-bottom: 8rem !important; }
+
+/* ========================================
+   CUSTOM FONT SIZE
+   ======================================== */
+.fs-xs { font-size: 0.75rem !important; }
+
+/* ========================================
+   CUSTOM POSITION UTILITIES
+   ======================================== */
+.top-10 { top: 10% !important; }
+.top-60 { top: 60% !important; }
+.top-65 { top: 65% !important; }
+.top-70 { top: 70% !important; }
+.bottom-10 { bottom: 10% !important; }
+.start-10 { left: 10% !important; }
+.end-10 { right: 10% !important; }
+
+/* ========================================
+   TABLE HEADER FONT WEIGHT
+   ======================================== */
+.table th {
+  font-weight: 400;
+}
+
+/* ========================================
+   OVERLAY
+   ======================================== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  display: none;
+  z-index: 1030;
+}
+.overlay.show {
+  display: block;
+}
+
+/* ========================================
+   SIDEBAR
+   ======================================== */
+.sidebar {
+  width: 240px;
+  background: #fff;
+  transition: width 0.3s, left 0.3s;
+  border-right: 1px solid #e5e5e5;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding-top: 60px;
+  z-index: 1030;
+}
+
+.sidebar .nav-link {
+  color: #262626;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 400;
+  gap: 12px;
+  white-space: nowrap;
+  margin: 1px 12px;
+  border-radius: 8px;
+}
+.sidebar .nav-link:hover {
+  color: #E66239;
+  background-color: rgba(230, 98, 57, 0.095);
+}
+.sidebar .nav-link.active {
+  color: #E66239;
+  background-color: rgba(230, 98, 57, 0.095);
+}
+.sidebar .nav-link .ti {
+  font-size: 18px;
+}
+.sidebar .nav-text {
+  transition: opacity 0.2s;
+}
+
+.sidebar .logo-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 60px;
+  width: 100%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 17px;
+  color: #262626;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+/* Collapsed sidebar (desktop) */
+.sidebar.collapsed {
+  width: 60px;
+}
+.sidebar.collapsed .nav-link {
+  margin: 0 0;
+  background-color: transparent;
+  padding: 8px 18px;
+}
+.sidebar.collapsed .nav-text,
+.sidebar.collapsed .logo-text {
+  display: none;
+}
+
+/* ========================================
+   MOBILE SIDEBAR (≤992px)
+   ======================================== */
+@media (max-width: 991.98px) {
+  .sidebar {
+    left: -240px;
+  }
+  .sidebar.mobile-show {
+    left: 0;
+  }
+  .content {
+    margin-left: 0 !important;
+  }
+}
+
+/* ========================================
+   MOBILE TOGGLE BUTTON (floating)
+   ======================================== */
+.mobile-toggle-btn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1050;
+}
+@media (min-width: 992px) {
+  .mobile-toggle-btn {
+    display: none !important;
+  }
+}
+
+/* ========================================
+   MAIN CONTENT
+   ======================================== */
+.content {
+  margin-left: 240px;
+  transition: margin-left 0.3s;
+  min-height: 100vh;
+}
+.content.full {
+  margin-left: 60px;
+}
+
+/* ========================================
+   AVATAR
+   ======================================== */
+.avatar {
+  position: relative;
+  display: inline-block;
+  width: 3rem;
+  height: 3rem;
+}
+.avatar-xs { width: 1.5rem; height: 1.5rem; }
+.avatar-sm { width: 2rem; height: 2rem; }
+.avatar-md { width: 2.5rem; height: 2.5rem; }
+.avatar-lg { width: 3.5rem; height: 3.5rem; }
+.avatar-xl { width: 5rem; height: 5rem; }
+.avatar-xxl { width: 7.5rem; height: 7.5rem; }
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Avatar indicators */
+.avatar-indicators {
+  position: relative;
+}
+.avatar-indicators::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 5%;
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  display: table;
+}
+.avatar-xxl.avatar-indicators::before {
+  bottom: 5px;
+  right: 17%;
+  width: 16%;
+  height: 16%;
+}
+.avatar-offline::before { background-color: #a3a3a3; }
+.avatar-online::before { background-color: #00C951; }
+.avatar-away::before { background-color: #F0B100; }
+.avatar-busy::before { background-color: #FB2C36; }
+.avatar-info::before { background-color: #00B8DB; }
+
+/* Avatar initials */
+.avatar-initials {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
+.avatar-primary .avatar-initials { color: #fff; background-color: #E66239; }
+.avatar-secondary .avatar-initials { color: #fff; background-color: #525252; }
+.avatar-success .avatar-initials { color: #fff; background-color: #00C951; }
+.avatar-warning .avatar-initials { color: #fff; background-color: #F0B100; }
+.avatar-info .avatar-initials { color: #fff; background-color: #00B8DB; }
+.avatar-danger .avatar-initials { color: #fff; background-color: #FB2C36; }
+.avatar-light .avatar-initials { color: #fff; background-color: #f5f5f5; }
+.avatar-dark .avatar-initials { color: #fff; background-color: #262626; }
+
+/* Avatar group */
+.avatar-group .avatar + .avatar {
+  margin-left: -1.2rem;
+}
+.avatar-group .avatar:hover {
+  z-index: 2;
+}
+.avatar-group img,
+.avatar-group .avatar .avatar-initials {
+  border: 2px solid #fff;
+}
+
+/* ========================================
+   BUTTON ICON
+   ======================================== */
+.btn-icon {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.92969rem;
+  font-weight: 400;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+.btn-icon.btn-xs { font-size: 0.75rem; width: 1.75rem; height: 1.75rem; }
+.btn-icon.btn-sm { font-size: 0.875rem; width: 2.1875rem; height: 2.1875rem; }
+.btn-icon.btn-lg { font-size: 1rem; width: 3.36875rem; height: 3.36875rem; }
+
+/* ========================================
+   ICON SHAPE
+   ======================================== */
+.icon-xxs { width: 1rem; height: 1rem; line-height: 1rem; }
+.icon-xs { width: 1.5rem; height: 1.5rem; line-height: 1.5rem; }
+.icon-sm { width: 2rem; height: 2rem; line-height: 2rem; }
+.icon-md { width: 2.5rem; height: 2.5rem; line-height: 2.5rem; }
+.icon-lg { width: 3rem; height: 3rem; line-height: 3rem; }
+.icon-xl { width: 3.5rem; height: 3.5rem; line-height: 3.5rem; }
+.icon-xxl { width: 4rem; height: 4rem; line-height: 4rem; }
+.icon-xxxl { width: 7rem; height: 7rem; line-height: 7rem; }
+
+.icon-shape {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* ========================================
+   BORDER
+   ======================================== */
+.border-dashed {
+  --bs-border-style: dashed;
+}
+
+/* ========================================
+   TIMELINE
+   ======================================== */
+.timeline-vertical {
+  position: relative;
+}
+.timeline-vertical .timeline-item .timeline-bar {
+  position: absolute;
+  height: 100px;
+  left: 5px;
+  top: 24px;
+}
+.timeline-vertical-height .timeline-item .timeline-bar {
+  height: calc(100% - 1rem) !important;
+}
+
+/* ========================================
+   VR (Vertical Rule)
+   ======================================== */
+.vr {
+  display: inline-block;
+  align-self: stretch;
+  width: 1px;
+  min-height: 1em;
+  background-color: #e5e5e5 !important;
+  opacity: 0.25;
+}
+
+/* ========================================
+   RESPONSIVE TABLES
+   ======================================== */
+
+/* --- Card-style tables on mobile (<576px) --- */
+@media (max-width: 575.98px) {
+  .table-card-mobile thead {
+    display: none;
+  }
+  .table-card-mobile tbody tr {
+    display: block;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    background: #fff;
+  }
+  .table-card-mobile tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.85rem;
+    white-space: normal !important;
+  }
+  .table-card-mobile tbody td:last-child {
+    border-bottom: none;
+  }
+  .table-card-mobile tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+  .table-card-mobile tbody td:empty {
+    display: none;
+  }
+}
+
+/* --- Smooth scrolling for regular responsive tables --- */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ========================================
+   FORMS — touch-friendly on mobile
+   ======================================== */
+@media (max-width: 575.98px) {
+  .form-control,
+  .form-select {
+    font-size: 16px; /* prevents iOS zoom on focus */
+  }
+}
+
+/* ========================================
+   SIDEBAR OVERLAY FIX
+   ======================================== */
+body.sidebar-open {
+  overflow: hidden;
+}
+@media (min-width: 992px) {
+  body.sidebar-open {
+    overflow: auto;
+  }
+}
+
+/* ========================================
+   LOADING PLACEHOLDER ROWS
+   Server-rendered index tables include .loading-placeholder rows
+   that are removed on DOMContentLoaded by app.js
+   ======================================== */
+.loading-placeholder {
+  opacity: 0.6;
+}
+
+/* ========================================
+   PAGE-LEVEL LOADING OVERLAY
+   Covers <main> only during initial server-rendered page load.
+   200ms debounce prevents flicker on fast loads.
+   One-shot: removed after DOMContentLoaded.
+   ======================================== */
+#page-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+/* ========================================
+   PAGINATION — mobile friendly
+   ======================================== */
+@media (max-width: 575.98px) {
+  .pagination .page-link {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.8rem;
+  }
+}

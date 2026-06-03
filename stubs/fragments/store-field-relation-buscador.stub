@@ -1,0 +1,4 @@
+            if (!empty($data['{{fk_column}}'])) {
+                ${{related_var}} = {{RelatedModel}}::findOrFail($data['{{fk_column}}']);
+                ${{model}}->{{fk_column}} = ${{related_var}}->{{related_pk}};
+            }

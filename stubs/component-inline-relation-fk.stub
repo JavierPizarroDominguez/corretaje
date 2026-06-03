@@ -1,0 +1,60 @@
+    {{-- [GEN:START:field_{{field_id}}] @gen:editable @gen:type:relation-fk @gen:related:{{RelatedModel}} --}}
+    <tr>
+        <td><b>{{label}}:</b></td>
+        <td id="td-{{model}}-{{pk_blade_segments}}-{{field_id}}">
+            @if(${{model}}->{{fk_column}})
+                <a href="/{{related_route}}/{{ ${{model}}->{{fk_column}} }}">
+                    {{ ${{model}}->{{relation}}->{{display_field}} ?? ${{model}}->{{fk_column}} }}
+                </a>
+            @else
+                <span class="text-muted fst-italic">Sin {{label}}</span>
+            @endif
+        </td>
+        <td id="btn-{{model}}-{{pk_blade_segments}}-{{field_id}}">
+            <button onclick="editarCampo('td-{{model}}-{{pk_blade_segments}}-{{field_id}}', 'btn-{{model}}-{{pk_blade_segments}}-{{field_id}}', 'form-{{model}}-{{pk_blade_segments}}-{{field_id}}', 'input-{{model}}-{{pk_blade_segments}}-{{field_id}}')"
+                    class="btn btn-sm btn-outline-secondary">
+                {{ ${{model}}->{{fk_column}} ? 'Editar' : 'Agregar' }}
+            </button>
+        </td>
+        <td id="form-{{model}}-{{pk_blade_segments}}-{{field_id}}" colspan="2" style="display:none;">
+            @if(${{related_var}}Count > config('generator.select_threshold', 15))
+                {{-- Buscador: muchos registros --}}
+                <form method="POST" action="/{{route_base}}/{{pk_blade_segments}}">
+                    @csrf
+                    @method('PUT')
+                    {{hidden_fk_input}}
+                    <div class="position-relative">
+                        <input id="input-{{model}}-{{pk_blade_segments}}-{{field_id}}"
+                               name="{{buscador_input_name}}"
+                               class="form-control form-control-sm"
+                               value="{{ ${{model}}->{{relation}}->{{display_field}} ?? '' }}"
+                               autocomplete="off"
+                               placeholder="Buscar {{label}}..."
+                               onchange="if(this.value) { document.getElementById('hidden-{{model}}-{{pk_blade_segments}}-{{field_id}}').value = ''; }">
+                        <div id="lista-{{model}}-{{pk_blade_segments}}-{{FieldIdPascal}}"
+                             class="list-group position-absolute w-100"
+                             style="z-index:1000;"></div>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary mt-1">Guardar</button>
+                </form>
+            @else
+                {{-- Select simple --}}
+                <form method="POST" action="/{{route_base}}/{{pk_blade_segments}}">
+                    @csrf
+                    @method('PUT')
+                    {{hidden_fk_input}}
+                    <select id="input-{{model}}-{{pk_blade_segments}}-{{field_id}}" name="{{scoped_fk_name}}" class="form-select form-select-sm">
+                        <option value="">— Seleccionar —</option>
+                        @foreach(${{related_var}}Options as $option)
+                            <option value="{{ $option->id }}"
+                                    {{ ${{model}}->{{fk_column}} == $option->id ? 'selected' : '' }}>
+                                {{ $option->{{display_field}} }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary mt-1">Guardar</button>
+                </form>
+            @endif
+        </td>
+    </tr>
+    {{-- [GEN:END:field_{{field_id}}] --}}

@@ -1,0 +1,10 @@
+    {{-- [GEN:START:field_{{field_id}}] @gen:readonly @gen:type:relation-link @gen:related:{{RelatedModel}} --}}
+    <tr>
+        <td><b>{{label}}:</b></td>
+        <td>
+            <a href="/{{related_route}}/{{ ${{model}}->{{fk_column}} }}">
+                {{ ${{model}}->{{relation}}->{{display_field}} }}
+            </a>
+        </td>
+    </tr>
+    {{-- [GEN:END:field_{{field_id}}] --}}

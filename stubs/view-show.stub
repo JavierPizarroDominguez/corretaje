@@ -1,0 +1,25 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>{{Model}} #{{pk_blade_segments}}</h2>
+        <div>
+            <a href="/{{route_base}}/{{pk_blade_segments}}/edit" class="btn btn-secondary btn-sm">Editar</a>
+            <a href="/{{route_base}}" class="btn btn-outline-secondary btn-sm">Volver</a>
+        </div>
+    </div>
+
+    {{-- [GEN:START:component_table] --}}
+    <table class="table table-bordered">
+{{field_rows}}
+    </table>
+
+    @push('scripts')
+    <script>
+{{buscador_calls}}
+    </script>
+    @endpush
+    {{-- [GEN:END:component_table] --}}
+</div>
+@endsection

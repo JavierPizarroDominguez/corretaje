@@ -1,0 +1,17 @@
+    {{-- [GEN:START:field_{{field}}] @gen:editable --}}
+    <tr>
+        <td><b>{{label}}:</b></td>
+        <td id="td-{{model}}-{{ ${{model}}->{{pk}} }}-{{field}}">{{ ${{model}}->{{field}} }}</td>
+        <td id="btn-{{model}}-{{ ${{model}}->{{pk}} }}-{{field}}">
+            <button onclick="editarCampo('td-{{model}}-{{ ${{model}}->{{pk}} }}-{{field}}', 'btn-{{model}}-{{ ${{model}}->{{pk}} }}-{{field}}', 'form-{{model}}-{{ ${{model}}->{{pk}} }}-{{field}}', 'input-{{model}}-{{ ${{model}}->{{pk}} }}-{{field}}')" class="btn btn-sm btn-outline-secondary">Editar</button>
+        </td>
+        <td id="form-{{model}}-{{ ${{model}}->{{pk}} }}-{{field}}" colspan="2" style="display:none;">
+            <form method="POST" action="/{{route_base}}/{{pk_blade_segments}}">
+                @csrf
+                @method('PUT')
+                <input id="input-{{model}}-{{ ${{model}}->{{pk}} }}-{{field}}" name="{{field}}" type="{{input_type}}" value="{{ ${{model}}->{{field}} }}">
+                <input type="submit" value="Modificar" class="btn btn-sm btn-primary">
+            </form>
+        </td>
+    </tr>
+    {{-- [GEN:END:field_{{field}}] --}}

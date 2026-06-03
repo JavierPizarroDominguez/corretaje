@@ -1,0 +1,10 @@
+    <div class="form-check form-check-inline">
+        <input class="form-check-input filter-enum-cb"
+               type="checkbox"
+               name="filter[{{field}}][]"
+               value="{{enum_value}}"
+               id="filter-{{field}}-{{enum_value_safe}}"
+               data-filter="{{field}}">
+        <label class="form-check-label small"
+               for="filter-{{field}}-{{enum_value_safe}}">{{enum_label}}</label>
+    </div>

@@ -1,0 +1,135 @@
+<?php
+
+namespace App\Http\Controllers\Crud;
+
+use App\Http\Controllers\Controller;
+use App\Models\{{Model}};
+use Illuminate\Http\Request;
+{{model_uses}}
+class {{Model}}Controller extends Controller
+{
+    public function index()
+    {
+        ${{models}} = {{Model}}::query()->paginate(10);
+        return view('{{model_snake}}.index', compact('{{models}}'));
+    }
+
+    public function create()
+    {
+        // [GEN:START:fk_data]
+{{fk_data}}
+        // [GEN:END:fk_data]
+
+        return view('{{model_snake}}.create', [
+            // [GEN:START:fk_compact_array]
+{{fk_compact_array}}
+            // [GEN:END:fk_compact_array]
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            // [GEN:START:validation_rules]
+{{validation_rules}}
+            // [GEN:END:validation_rules]
+        ]);
+
+        try {
+            ${{model}} = new {{Model}}();
+            // [GEN:START:store_fields]
+{{store_fields}}
+            // [GEN:END:store_fields]
+            ${{model}}->save();
+
+            // [GEN:START:scoped_store_fields]
+{{scoped_store_fields}}
+            // [GEN:END:scoped_store_fields]
+
+            return redirect()->route('{{model_snake}}.show', {{redirect_params}})
+                ->with('success', '{{Model}} se ha creado correctamente.');
+        } catch (\Exception $e) {
+            // [GEN:START:catch_constraints]
+{{catch_constraints}}
+            // [GEN:END:catch_constraints]
+            return redirect()->back()
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    public function show({{method_params}})
+    {
+        ${{model}} = {{find_or_fail}};
+
+        // [GEN:START:fk_data]
+{{fk_data}}
+        // [GEN:END:fk_data]
+
+        return view('{{model_snake}}.show', [
+            '{{model}}' => ${{model}},
+            // [GEN:START:fk_compact_array]
+{{fk_compact_array}}
+            // [GEN:END:fk_compact_array]
+        ]);
+    }
+
+    public function edit({{method_params}})
+    {
+        ${{model}} = {{find_or_fail}};
+
+        // [GEN:START:fk_data]
+{{fk_data}}
+        // [GEN:END:fk_data]
+
+        return view('{{model_snake}}.edit', [
+            '{{model}}' => ${{model}},
+            // [GEN:START:fk_compact_array]
+{{fk_compact_array}}
+            // [GEN:END:fk_compact_array]
+        ]);
+    }
+
+    public function update(Request $request, {{method_params}})
+    {
+        $data = $request->validate([
+            // [GEN:START:validation_rules]
+{{validation_rules}}
+            // [GEN:END:validation_rules]
+        ]);
+
+        try {
+            ${{model}} = {{find_or_fail}};
+            // [GEN:START:update_fields]
+{{update_fields}}
+            // [GEN:END:update_fields]
+
+            // [GEN:START:scoped_update_fields]
+{{scoped_update_fields}}
+            // [GEN:END:scoped_update_fields]
+            {{update_query}}
+            return redirect()->back()
+                ->with('success', '{{Model}} se ha actualizado correctamente.');
+        } catch (\Exception $e) {
+            // [GEN:START:catch_constraints]
+{{catch_constraints}}
+            // [GEN:END:catch_constraints]
+            return redirect()->back()
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    public function destroy({{method_params}})
+    {
+        try {
+            {{destroy_call}};
+            return redirect()->route('{{model_snake}}.index')
+                ->with('success', '{{Model}} se ha eliminado correctamente.');
+        } catch (\Exception $e) {
+            // [GEN:START:catch_destroy]
+{{catch_constraints}}
+            // [GEN:END:catch_destroy]
+            return redirect()->back()
+                ->with('error', 'No se puede eliminar: el registro está siendo usado por otros datos.');
+        }
+    }
+}

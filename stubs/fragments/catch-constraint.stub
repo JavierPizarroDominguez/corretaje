@@ -1,0 +1,3 @@
+            if (str_contains($e->getMessage(), '{{constraint_name}}')) {
+                return back()->with('error', '{{constraint_message}}');
+            }

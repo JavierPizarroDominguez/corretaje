@@ -1,0 +1,2 @@
+            '{{related_var}}Count'   => ${{related_var}}Count,
+            '{{related_var}}Options' => ${{related_var}}Options,

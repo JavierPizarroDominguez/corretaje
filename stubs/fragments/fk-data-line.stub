@@ -1,0 +1,2 @@
+        ${{related_var}}Count   = \App\Models\{{RelatedModel}}::count();
+        ${{related_var}}Options = \App\Models\{{RelatedModel}}::orderBy('{{display_field}}')->get(['id', '{{display_field}}']);

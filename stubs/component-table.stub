@@ -1,0 +1,11 @@
+{{-- [GEN:START:component_table] --}}
+<table>
+{{field_rows}}
+</table>
+
+@push('scripts')
+<script>
+{{buscador_calls}}
+</script>
+@endpush
+{{-- [GEN:END:component_table] --}}

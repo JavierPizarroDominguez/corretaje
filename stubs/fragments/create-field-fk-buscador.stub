@@ -1,0 +1,20 @@
+        <div class="mb-3">
+            <label class="form-label">{{label}}</label>
+            {{-- name="{{display_field}}-{{referenced_table}}" evita colisión con campos propios --}}
+            <div class="position-relative">
+                <input id="input-create-{{field_id}}"
+                       name="{{buscador_input_name}}"
+                       class="form-control"
+                       placeholder="Buscar {{label}}..."
+                       value="{{ old('{{buscador_input_name}}') }}"
+                       autocomplete="off">
+                <input type="hidden"
+                       name="{{fk_column}}"
+                       id="input-create-{{field_id}}-id"
+                       value="{{ old('{{fk_column}}') }}">
+                <div id="listaCreate{{FieldIdPascal}}"
+                     class="list-group position-absolute w-100"
+                     style="z-index:1000;"></div>
+            </div>
+            @error('{{buscador_input_name}}') <span class="text-danger">{{ $message }}</span> @enderror
+        </div>

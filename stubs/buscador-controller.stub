@@ -1,0 +1,71 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+{{model_uses}}
+
+class BuscadorController extends Controller
+{
+    public function index(Request $request)
+    {
+        $q         = $request->input('q', '');
+        $resultados = [];
+
+        if (empty($q)) {
+            return response()->json(['data' => []]);
+        }
+
+{{buscador_blocks}}
+
+        return response()->json(['data' => $resultados]);
+    }
+
+    /**
+     * Resuelve el texto a mostrar siguiendo una ruta de relaciones Eloquent.
+     * Ejemplo: $item, 'participante_contratos.cliente', 'nombre'
+     * → $item->participante_contratos->first()->cliente->nombre
+     */
+    private function resolveDisplay($model, string $path, string $field): ?string
+    {
+        $parts = explode('.', $path);
+        array_pop($parts); // quitar el campo final, ya está en $field
+
+        $current = $model;
+        foreach ($parts as $relation) {
+            if ($current === null) return null;
+
+            // hasMany/belongsToMany: tomar el primero
+            if (is_iterable($current->$relation) && !is_string($current->$relation)) {
+                $current = collect($current->$relation)->first();
+            } else {
+                $current = $current->$relation;
+            }
+        }
+
+        return $current?->$field;
+    }
+
+    /**
+     * Construye el closure para whereHas encadenado.
+     * Ejemplo: ['participante_contratos', 'cliente'], 'nombre', $q
+     * → whereHas('participante_contratos', fn($q) => $q->whereHas('cliente', fn($q2) => $q2->where('nombre', 'LIKE', "%{$q}%")))
+     */
+    private function buildWhereHas(array $parts, string $field, string $q): array
+    {
+        // Retorna [$relation, $callback] para usar en whereHas($relation, $callback)
+        $innerField = $field;
+        $innerQ     = $q;
+
+        $buildNested = function(array $remaining) use (&$buildNested, $innerField, $innerQ) {
+            if (count($remaining) === 1) {
+                return [$remaining[0], fn($query) => $query->where($innerField, 'LIKE', "%{$innerQ}%")];
+            }
+            $head = array_shift($remaining);
+            [$nextRelation, $nextCallback] = $buildNested($remaining);
+            return [$head, fn($query) => $query->whereHas($nextRelation, $nextCallback)];
+        };
+
+        return $buildNested($parts);
+    }
+}

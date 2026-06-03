@@ -1,0 +1,44 @@
+<style>
+    .filter-group-header {
+        background: #f8f9fa;
+        border-radius: 4px;
+        transition: background 0.15s ease;
+        user-select: none;
+        cursor: pointer;
+    }
+    .filter-group-header:hover {
+        background: #e9ecef;
+    }
+    .filter-group-header[aria-expanded="true"] .filter-chevron {
+        transform: rotate(180deg);
+    }
+    .filter-chevron {
+        transition: transform 0.2s ease;
+        font-size: 0.65rem;
+        color: #adb5bd;
+    }
+    .filter-group-title {
+        letter-spacing: 0.03em;
+        font-size: 0.75rem;
+    }
+    .filter-group-icon {
+        font-size: 0.85rem;
+        line-height: 1;
+    }
+</style>
+<div class="collapse" id="filter-panel-{{model_snake}}">
+    <div class="card card-body bg-light border p-3">
+        {{filter_sections}}
+        <div class="row mt-3 pt-2 border-top">
+            <div class="col-12 d-flex gap-2 align-items-center">
+                <button type="button" class="btn btn-primary btn-sm" id="btn-apply-filters-{{model_snake}}">
+                    <i class="ti ti-filter"></i> Aplicar filtros
+                </button>
+                <a href="/{{route_base}}" class="btn btn-outline-secondary btn-sm">
+                    <i class="ti ti-x"></i> Limpiar
+                </a>
+                <small class="text-muted ms-auto" id="filter-total-{{model_snake}}"></small>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,6 @@
+        if (array_key_exists('{{buscador_input_name}}', $data)) {
+            ${{related_var}} = {{RelatedModel}}::firstOrCreate([
+                '{{display_field}}' => trim($data['{{buscador_input_name}}'])
+            ]);
+            ${{model}}->{{fk_column}} = ${{related_var}}->{{related_pk}};
+        }

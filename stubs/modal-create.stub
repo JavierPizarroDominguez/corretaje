@@ -1,0 +1,29 @@
+{{--
+    modal/create.blade.php — Formulario para crear {{Model}} en modal
+
+    Uso desde la vista padre:
+        <button type="button" class="btn btn-primary btn-sm"
+                onclick="abrirModal({titulo: 'Nuevo {{model_title}}', vista: 'vista-crear-{{model}}'})">
+            Agregar
+        </button>
+
+        <div class="d-none">
+            <div id="vista-crear-{{model}}">
+                @include('{{model_snake}}.modal.create')
+            </div>
+        </div>
+--}}
+
+<form method="POST" action="/{{route_base}}" id="form-modal-create-{{model}}">
+    @csrf
+{{create_fields}}
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+    </div>
+</form>
+
+@push('scripts')
+<script>
+{{create_buscador_calls}}
+</script>
+@endpush

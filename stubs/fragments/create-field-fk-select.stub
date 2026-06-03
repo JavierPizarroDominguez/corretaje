@@ -1,0 +1,35 @@
+        <div class="mb-3">
+            <label class="form-label">{{label}}</label>
+            @php
+                $current{{FieldIdPascal}} = old('{{fk_column}}') ?? (${{model}}->{{fk_column}} ?? null);
+            @endphp
+            @if(${{related_var}}Count > config('generator.select_threshold', 15))
+                {{-- Buscador: muchos registros --}}
+                {{-- name="{{display_field}}-{{referenced_table}}" evita colisión con campos propios --}}
+                <div class="position-relative">
+                    <input id="input-create-{{field_id}}"
+                           name="{{buscador_input_name}}"
+                           class="form-control"
+                           placeholder="Buscar {{label}}..."
+                           value="{{ old('{{buscador_input_name}}') }}"
+                           autocomplete="off">
+                <div id="listaCreate{{FieldIdPascal}}"
+                     class="list-group position-absolute w-100"
+                     style="z-index:1000;"></div>
+                </div>
+                <input type="hidden" name="{{scoped_fk_name}}" id="input-create-{{field_id}}-id">
+                @error('{{buscador_input_name}}') <span class="text-danger">{{ $message }}</span> @enderror
+            @else
+                {{-- Select: pocos registros, envía el id directamente --}}
+                <select name="{{scoped_fk_name}}" class="form-select">
+                    <option value="">— Seleccionar —</option>
+                    @foreach(${{related_var}}Options as $option)
+                        <option value="{{ $option->id }}"
+                                {{ $current{{FieldIdPascal}} == $option->id ? 'selected' : '' }}>
+                            {{ $option->{{display_field}} }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('{{scoped_fk_name}}') <span class="text-danger">{{ $message }}</span> @enderror
+            @endif
+        </div>

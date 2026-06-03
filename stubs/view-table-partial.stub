@@ -1,0 +1,15 @@
+@foreach (${{models}} as ${{model}})
+<tr>
+{{index_cells}}
+    <td>
+        <a href="/{{route_base}}/{{pk_blade_segments}}" class="btn btn-sm btn-outline-primary">Revisar</a>
+        <form method="POST" action="/{{route_base}}/{{pk_blade_segments}}" style="display:inline;">
+            @csrf
+            @method('DELETE')
+            <button type="submit"
+                    class="btn btn-sm btn-outline-danger"
+                    onclick="return confirm('¿Eliminar?')">Eliminar</button>
+        </form>
+    </td>
+</tr>
+@endforeach

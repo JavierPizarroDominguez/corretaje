@@ -20,4 +20,5 @@ jobs:
 
           script: |
             cd /home/ubuntu/corretaje/corretaje
-            git pull origin main
+            git fetch origin
+  	    git reset --hard origin/main

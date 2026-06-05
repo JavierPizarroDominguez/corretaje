@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="row mb-3">
         <div class="col-12">
-            <h1 class="fs-3 mb-1">Buscadorete</h1>
+            <h1 class="fs-3 mb-1">Buscador 1</h1>
             <p>Escriba el nombre o la dirección del cliente o propiedad en el buscador para acceder a su información.</p>
         </div>
     </div>
@@ -43,7 +43,7 @@
                     <p class="text-muted mb-0 text-wrap">Todas tus propiedades están al día.<br>No tienes transferencias pendientes por registrar.</p>
                 </div>
                 <div class="table-responsive" id="tabla-wrapper">
-                    <table class="table mb-0 text-nowrap table-hover" id="tabla-pendientes">
+                    <table class="table mb-0 text-nowrap table-hover table-card-mobile" id="tabla-pendientes">
                     <thead class="table-light border-light">
                         <tr>
                             <th><b>Dirección</b></th>

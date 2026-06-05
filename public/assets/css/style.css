@@ -487,6 +487,31 @@
 }
 
 /* ========================================
+   DASHBOARD PENDIENTES CARD OVERRIDES
+   ======================================== */
+/* Fix tfoot pagination display in card mode (overrides tbody td display:flex) */
+@media (max-width: 575.98px) {
+  .table-card-mobile#tabla-pendientes tfoot td {
+    display: table-cell !important;
+    flex-direction: unset !important;
+    justify-content: unset !important;
+    align-items: unset !important;
+    padding: 8px 4px;
+  }
+  .table-card-mobile#tabla-pendientes tfoot td .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .table-card-mobile#tabla-pendientes tbody td .mb-1 {
+    margin-bottom: 0.25rem;
+  }
+  .table-card-mobile#tabla-pendientes tbody td .btn-cobro {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+/* ========================================
    MOBILE TYPOGRAPHY SCALING
    ======================================== */
 @media (max-width: 991.98px) {

@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class DestinoTransaccion extends Model
 {
-	protected $table = 'destino_transaccion';
+	protected $table = 'Destino_Transaccion';
 	public $timestamps = false;
 
 	protected $casts = [

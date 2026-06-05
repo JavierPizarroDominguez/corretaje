@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class TransaccionCobro extends Model
 {
-	protected $table = 'transaccion_cobro';
+	protected $table = 'Transaccion_Cobro';
 	public $incrementing = false;
 	public $timestamps = false;
 

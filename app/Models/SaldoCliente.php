@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class SaldoCliente extends Model
 {
-	protected $table = 'saldo_cliente';
+	protected $table = 'Saldo_Cliente';
 	protected $primaryKey = 'Transaccion_id';
 	public $incrementing = false;
 	public $timestamps = false;

@@ -36,7 +36,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Cobro extends Model
 {
-	protected $table = 'cobro';
+	protected $table = 'Cobro';
 	public $timestamps = false;
 
 	protected $casts = [

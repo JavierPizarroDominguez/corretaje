@@ -25,7 +25,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Propiedad extends Model
 {
-	protected $table = 'propiedad';
+	protected $table = 'Propiedad';
 	public $timestamps = false;
 
 	protected $casts = [

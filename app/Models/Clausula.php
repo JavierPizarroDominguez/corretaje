@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Clausula extends Model
 {
-	protected $table = 'clausula';
+	protected $table = 'Clausula';
 	public $timestamps = false;
 
 	protected $fillable = [

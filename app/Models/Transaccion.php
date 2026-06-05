@@ -29,7 +29,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Transaccion extends Model
 {
-	protected $table = 'transaccion';
+	protected $table = 'Transaccion';
 	public $timestamps = false;
 
 	protected $casts = [

@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class CuentaBancarium extends Model
 {
-	protected $table = 'cuenta_bancaria';
+	protected $table = 'Cuenta_Bancaria';
 	public $timestamps = false;
 
 	protected $casts = [

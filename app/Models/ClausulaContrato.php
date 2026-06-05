@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ClausulaContrato extends Model
 {
-	protected $table = 'clausula_contrato';
+	protected $table = 'Clausula_Contrato';
 	public $incrementing = false;
 	public $timestamps = false;
 

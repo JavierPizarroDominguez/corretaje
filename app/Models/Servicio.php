@@ -30,7 +30,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Servicio extends Model
 {
-	protected $table = 'servicio';
+	protected $table = 'Servicio';
 	public $timestamps = false;
 
 	protected $casts = [

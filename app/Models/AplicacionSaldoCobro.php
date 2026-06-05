@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class AplicacionSaldoCobro extends Model
 {
-	protected $table = 'aplicacion_saldo_cobro';
+	protected $table = 'Aplicacion_Saldo_Cobro';
 	public $timestamps = false;
 
 	protected $casts = [

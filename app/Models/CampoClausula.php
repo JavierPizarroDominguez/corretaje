@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class CampoClausula extends Model
 {
-	protected $table = 'campo_clausula';
+	protected $table = 'Campo_Clausula';
 	public $timestamps = false;
 
 	protected $casts = [

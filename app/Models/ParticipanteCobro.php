@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ParticipanteCobro extends Model
 {
-	protected $table = 'participante_cobro';
+	protected $table = 'Participante_Cobro';
 	public $incrementing = false;
 	public $timestamps = false;
 

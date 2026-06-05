@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ValorCampoClausula extends Model
 {
-	protected $table = 'valor_campo_clausula';
+	protected $table = 'Valor_Campo_Clausula';
 	public $incrementing = false;
 	public $timestamps = false;
 

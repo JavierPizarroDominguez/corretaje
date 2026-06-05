@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ParticipanteContrato extends Model
 {
-	protected $table = 'participante_contrato';
+	protected $table = 'Participante_Contrato';
 	public $incrementing = false;
 	public $timestamps = false;
 

@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Nacionalidad extends Model
 {
-	protected $table = 'nacionalidad';
+	protected $table = 'Nacionalidad';
 	public $timestamps = false;
 
 	protected $fillable = [

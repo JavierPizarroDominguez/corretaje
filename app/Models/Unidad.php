@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Unidad extends Model
 {
-	protected $table = 'unidad';
+	protected $table = 'Unidad';
 	public $timestamps = false;
 
 	protected $casts = [

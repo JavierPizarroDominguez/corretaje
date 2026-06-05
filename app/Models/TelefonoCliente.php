@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class TelefonoCliente extends Model
 {
-	protected $table = 'telefono_cliente';
+	protected $table = 'Telefono_Cliente';
 	public $incrementing = false;
 	public $timestamps = false;
 

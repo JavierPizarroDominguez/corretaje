@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Banco extends Model
 {
-	protected $table = 'banco';
+	protected $table = 'Banco';
 	public $timestamps = false;
 
 	protected $fillable = [

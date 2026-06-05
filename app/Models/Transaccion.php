@@ -64,7 +64,7 @@ class Transaccion extends Model
 
 	public function cobros()
 	{
-		return $this->belongsToMany(Cobro::class, 'transaccion_cobro', 'Transaccion_id', 'Cobro_id')
+		return $this->belongsToMany(Cobro::class, 'Transaccion_Cobro', 'Transaccion_id', 'Cobro_id')
 					->withPivot('monto_pagado');
 	}
 }

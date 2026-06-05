@@ -110,7 +110,7 @@ public function acreedor()
 
 	public function transaccions()
 	{
-		return $this->belongsToMany(Transaccion::class, 'transaccion_cobro', 'Cobro_id', 'Transaccion_id')
+		return $this->belongsToMany(Transaccion::class, 'Transaccion_Cobro', 'Cobro_id', 'Transaccion_id')
 					->withPivot('monto_pagado');
 	}
 }

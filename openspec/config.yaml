@@ -1,0 +1,47 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Tech stack: PHP 8.1+, Laravel 10.x, MySQL (prod) / SQLite (tests), vanilla JS, Bootstrap 5.3, Tabler Icons, Vite
+  Architecture: MVC + Services (app/Services/) + Repositories (app/Repositories/) + Traits + Rules + InfyOm scaffolding
+  Routes: web.php, api.php, generated.php
+  API: API Controllers + Web Controllers
+  Domain: Chilean real estate management system (corretaje)
+  UI language: Spanish
+
+testing:
+  runner: PHPUnit 10.x
+  unit_tests: 14
+  feature_tests: 6
+  framework: Laravel TestCase
+  mocking: Mockery
+  db_tests: DatabaseTransactions trait
+  coverage_included: app/
+  ci_tests: false
+  strict_tdd: true
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Focus on the specific error/fix — avoid scope creep
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing code patterns (MVC, Services, Repositories)
+    - Use showElLoading/hideElLoading for fetch() feedback
+    - Use flashModal for user messages, never alert/confirm/prompt
+    tdd: true
+    test_command: "./vendor/bin/phpunit"
+  verify:
+    test_command: "./vendor/bin/phpunit"
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

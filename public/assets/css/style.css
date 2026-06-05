@@ -503,21 +503,20 @@
     justify-content: center;
   }
   /* Cells containing cobro buttons: stack vertically instead of flex row */
-  .table-card-mobile#tabla-pendientes tbody td[data-label^="Cobros"] {
+  .table-card-mobile#tabla-pendientes tbody td.td-cobros {
     display: block !important;
-    flex-direction: unset !important;
-    justify-content: unset !important;
-    align-items: unset !important;
   }
-  .table-card-mobile#tabla-pendientes tbody td[data-label^="Cobros"] .mb-1 {
+  .table-card-mobile#tabla-pendientes tbody td.td-cobros .mb-1 {
     margin-bottom: 0.5rem;
   }
-  .table-card-mobile#tabla-pendientes tbody td[data-label^="Cobros"] .mb-1:last-child {
+  .table-card-mobile#tabla-pendientes tbody td.td-cobros .mb-1:last-child {
     margin-bottom: 0;
   }
-  .table-card-mobile#tabla-pendientes tbody td[data-label^="Cobros"] .btn-cobro {
+  .table-card-mobile#tabla-pendientes tbody td.td-cobros .btn-cobro {
     font-size: 0.85rem;
     padding: 0.5rem 0.75rem;
+    display: block;
+    width: 100%;
   }
 }
 

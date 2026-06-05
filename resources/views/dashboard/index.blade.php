@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="row mb-3">
         <div class="col-12">
-            <h1 class="fs-3 mb-1">Buscador 1</h1>
+            <h1 class="fs-3 mb-1">Buscador A</h1>
             <p>Escriba el nombre o la dirección del cliente o propiedad en el buscador para acceder a su información.</p>
         </div>
     </div>
@@ -248,9 +248,9 @@
 
                 let html = `<td><a href="/propiedad/ficha/${item.id}">${item.direccion}</a></td>`;
 
-                if (hayCol.arrendador) html += `<td>${renderCobros(item.arrendador)}</td>`;
-                if (hayCol.arrendatario) html += `<td>${renderCobros(item.arrendatario)}</td>`;
-                if (hayCol.corredor) html += `<td>${renderCobros(item.corredor)}</td>`;
+                if (hayCol.arrendador) html += `<td class="td-cobros">${renderCobros(item.arrendador)}</td>`;
+                if (hayCol.arrendatario) html += `<td class="td-cobros">${renderCobros(item.arrendatario)}</td>`;
+                if (hayCol.corredor) html += `<td class="td-cobros">${renderCobros(item.corredor)}</td>`;
 
                 tr.innerHTML = html;
                 tbody.appendChild(tr);

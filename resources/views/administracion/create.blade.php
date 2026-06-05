@@ -152,67 +152,6 @@
                     </div>
                 </div>
 
-                {{-- Navigation (legacy has no bottom nav â€” all via "Añadir" buttons + timeline click) --}}
-                <div class="d-flex gap-2 mt-4 pt-3 border-top" x-show="step < 8">
-                    <button type="button" class="btn btn-outline-secondary"
-                            x-show="step > 1"
-                            @click="goToStep(step - 1)">Anterior
-                    </button>
-                </div>
-
-                {{-- Dynamic Resumen Panel (moved below steps per M8) --}}
-                <div class="row mb-4" id="resumen-wrapper" style="display:none;">
-                    <div class="col-12">
-                        <div class="resumen-card" style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:1rem 1.25rem;">
-                            <h6 class="resumen-titulo" style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;margin-bottom:.6rem;">Resumen de la administraciÃ³n</h6>
-                            <table id="resumen-administracion" class="resumen-table" style="width:100%;border-collapse:collapse;font-size:.9rem;">
-                                <tbody>
-                                    <tr data-key="arrendador" style="display:none;border-bottom:1px solid #e9ecef;">
-                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Arrendador</td>
-                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
-                                    </tr>
-                                    <tr data-key="arrendatario" style="display:none;border-bottom:1px solid #e9ecef;">
-                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Arrendatario</td>
-                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
-                                    </tr>
-                                    <tr data-key="propiedad" style="display:none;border-bottom:1px solid #e9ecef;">
-                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Propiedad</td>
-                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
-                                    </tr>
-                                    <tr data-key="administracion" style="display:none;border-bottom:1px solid #e9ecef;">
-                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">AdministraciÃ³n</td>
-                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
-                                    </tr>
-                                    <tr data-key="renta" style="display:none;border-bottom:1px solid #e9ecef;">
-                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Renta</td>
-                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
-                                    </tr>
-                                    <tr data-key="dia-pago-renta" style="display:none;border-bottom:1px solid #e9ecef;">
-                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">DÃ­a de pago</td>
-                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
-                                    </tr>
-                                    <tr data-key="comision-inicial" style="display:none;border-bottom:1px solid #e9ecef;">
-                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">ComisiÃ³n inicial</td>
-                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
-                                    </tr>
-                                    <tr data-key="egreso" style="display:none;border-bottom:1px solid #e9ecef;">
-                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Egreso / ComisiÃ³n mensual</td>
-                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
-                                    </tr>
-                                    <tr data-key="garantia" style="display:none;border-bottom:1px solid #e9ecef;">
-                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">GarantÃ­a</td>
-                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
-                                    </tr>
-                                    <tr data-key="servicios" style="display:none;border-bottom:1px solid #e9ecef;">
-                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Servicios</td>
-                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </div>
     </form>

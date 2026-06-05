@@ -550,6 +550,17 @@
   }
 }
 
+/* ========================================
+   ADMIN WIZARD — hide no-results on mobile
+   Only applies to arrendador/arrendatario lists in wizard steps 1 & 2
+   ======================================== */
+@media (max-width: 767px) {
+  #lista-arrendador .text-muted,
+  #lista-arrendatario .text-muted {
+    display: none;
+  }
+}
+
 /* --- Smooth scrolling for regular responsive tables --- */
 .table-responsive {
   -webkit-overflow-scrolling: touch;

@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="row mb-3">
         <div class="col-12">
-            <h1 class="fs-3 mb-1">Buscadorxx</h1>
+            <h1 class="fs-3 mb-1">Buscadorcito</h1>
             <p>Escriba el nombre o la dirección del cliente o propiedad en el buscador para acceder a su información.</p>
         </div>
     </div>

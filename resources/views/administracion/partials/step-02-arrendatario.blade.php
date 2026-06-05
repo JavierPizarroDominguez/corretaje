@@ -6,7 +6,7 @@
                name="arrendatario_nombre"
                class="form-control"
                value="{{ old('arrendatario_nombre') }}"
-               placeholder="Buscar cliente..."
+               placeholder="Nombre del cliente"
                autocomplete="off">
         <div style="position:relative;">
             <div id="lista-arrendatario" class="list-group position-absolute w-100" style="z-index:1000;"></div>

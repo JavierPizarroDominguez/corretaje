@@ -6,7 +6,19 @@
         <h2>Cobro #{{ $cobro->id }}</h2>
         <div>
             <a href="/cobro/{{ $cobro->id }}/edit" class="btn btn-secondary btn-sm">Editar</a>
-            <a href="/cobro" class="btn btn-outline-secondary btn-sm">Volver</a>
+            <a href="#" id="back-btn" class="btn btn-outline-secondary btn-sm">Volver</a>
+            <script>
+            (function() {
+                var params = new URLSearchParams(window.location.search);
+                var from = params.get('from');
+                var backBtn = document.getElementById('back-btn');
+                if (from && from.charAt(0) === '/' && from.indexOf('//') !== 0 && from.toLowerCase().indexOf('javascript:') !== 0) {
+                    backBtn.href = from;
+                } else {
+                    backBtn.href = '/cobro';
+                }
+            })();
+            </script>
         </div>
     </div>
 

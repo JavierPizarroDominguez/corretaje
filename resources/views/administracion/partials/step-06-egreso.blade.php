@@ -1,7 +1,7 @@
 {{-- Step 6: Egreso / Comisión Mensual (idéntico al legacy) --}}
 <div class="row mb-3" id="step-egreso">
     <div class="col-md-6">
-        <label for="egresoRentaInput">Egreso Renta Arrendador</label>
+        <label for="egresoRentaInput">Transferencia al Arrendador</label>
         <input type="number"
                id="egresoRentaInput"
                name="egreso_renta"

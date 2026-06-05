@@ -43,7 +43,63 @@
         <div class="card">
             <div class="card-body">
 
-                {{-- Dynamic Resumen Panel (like legacy #resumen-wrapper) --}}
+                {{-- Dynamic step title + subtitle (like legacy #titulo / #subtitulo) --}}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h1 class="fs-3 mb-1" id="titulo" x-text="stepMeta[Math.min(step - 1, stepMeta.length - 1)].titulo">Arrendador</h1>
+                        <p id="subtitulo" x-html="stepMeta[Math.min(step - 1, stepMeta.length - 1)].sub"></p>
+                    </div>
+                </div>
+
+                {{-- Step 1: Arrendador --}}
+                <div x-show="step === 1" style="display:none;">
+                    @include('administracion.partials.step-01-arrendador')
+                </div>
+
+                {{-- Step 2: Arrendatario --}}
+                <div x-show="step === 2" style="display:none;">
+                    @include('administracion.partials.step-02-arrendatario')
+                </div>
+
+                {{-- Step 3: Propiedad --}}
+                <div x-show="step === 3" style="display:none;">
+                    @include('administracion.partials.step-03-propiedad')
+                </div>
+
+                {{-- Step 4: AdministraciÃ³n --}}
+                <div x-show="step === 4" style="display:none;">
+                    @include('administracion.partials.step-04-contrato')
+                </div>
+
+                {{-- Step 5: ComisiÃ³n Inicial (conditional on !sin_administracion) --}}
+                <div x-show="step === 5 && !sin_administracion" style="display:none;">
+                    @include('administracion.partials.step-05-comision')
+                </div>
+
+                {{-- Step 6: Egreso (conditional on !sin_administracion) --}}
+                <div x-show="step === 6 && !sin_administracion" style="display:none;">
+                    @include('administracion.partials.step-06-egreso')
+                </div>
+
+                {{-- Step 7: GarantÃ­a (conditional on !sin_administracion) --}}
+                <div x-show="step === 7 && !sin_administracion" style="display:none;">
+                    @include('administracion.partials.step-07-garantia')
+                </div>
+
+                {{-- Step 8: Servicios â€\" LAST STEP with submit --}}
+                <div x-show="step === 8" style="display:none;">
+                    @include('administracion.partials.step-08-servicios')
+                </div>
+
+                {{-- Navigation (legacy has no bottom nav â€\" all via "AÃ±adir" buttons + timeline click) --}}
+                <div class="d-flex gap-2 mt-4 pt-3 border-top" x-show="step < 8">
+                    <button type="button" class="btn btn-outline-secondary"
+                            x-show="step > 1"
+                            @click="goToStep(step - 1)">Anterior
+                    </button>
+                </div>
+
+                {{-- Dynamic Resumen Panel (moved below steps per M8) --}}
                 <div class="row mb-4" id="resumen-wrapper" style="display:none;">
                     <div class="col-12">
                         <div class="resumen-card" style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:1rem 1.25rem;">
@@ -96,60 +152,65 @@
                     </div>
                 </div>
 
-                {{-- Dynamic step title + subtitle (like legacy #titulo / #subtitulo) --}}
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h1 class="fs-3 mb-1" id="titulo" x-text="stepMeta[Math.min(step - 1, stepMeta.length - 1)].titulo">Arrendador</h1>
-                        <p id="subtitulo" x-html="stepMeta[Math.min(step - 1, stepMeta.length - 1)].sub"></p>
-                    </div>
-                </div>
-
-                {{-- Step 1: Arrendador --}}
-                <div x-show="step === 1" style="display:none;">
-                    @include('administracion.partials.step-01-arrendador')
-                </div>
-
-                {{-- Step 2: Arrendatario --}}
-                <div x-show="step === 2" style="display:none;">
-                    @include('administracion.partials.step-02-arrendatario')
-                </div>
-
-                {{-- Step 3: Propiedad --}}
-                <div x-show="step === 3" style="display:none;">
-                    @include('administracion.partials.step-03-propiedad')
-                </div>
-
-                {{-- Step 4: Administración --}}
-                <div x-show="step === 4" style="display:none;">
-                    @include('administracion.partials.step-04-contrato')
-                </div>
-
-                {{-- Step 5: Comisión Inicial (conditional on !sin_administracion) --}}
-                <div x-show="step === 5 && !sin_administracion" style="display:none;">
-                    @include('administracion.partials.step-05-comision')
-                </div>
-
-                {{-- Step 6: Egreso (conditional on !sin_administracion) --}}
-                <div x-show="step === 6 && !sin_administracion" style="display:none;">
-                    @include('administracion.partials.step-06-egreso')
-                </div>
-
-                {{-- Step 7: Garantía (conditional on !sin_administracion) --}}
-                <div x-show="step === 7 && !sin_administracion" style="display:none;">
-                    @include('administracion.partials.step-07-garantia')
-                </div>
-
-                {{-- Step 8: Servicios â€” LAST STEP with submit --}}
-                <div x-show="step === 8" style="display:none;">
-                    @include('administracion.partials.step-08-servicios')
-                </div>
-
                 {{-- Navigation (legacy has no bottom nav â€” all via "Añadir" buttons + timeline click) --}}
                 <div class="d-flex gap-2 mt-4 pt-3 border-top" x-show="step < 8">
                     <button type="button" class="btn btn-outline-secondary"
                             x-show="step > 1"
                             @click="goToStep(step - 1)">Anterior
                     </button>
+                </div>
+
+                {{-- Dynamic Resumen Panel (moved below steps per M8) --}}
+                <div class="row mb-4" id="resumen-wrapper" style="display:none;">
+                    <div class="col-12">
+                        <div class="resumen-card" style="background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;padding:1rem 1.25rem;">
+                            <h6 class="resumen-titulo" style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;margin-bottom:.6rem;">Resumen de la administraciÃ³n</h6>
+                            <table id="resumen-administracion" class="resumen-table" style="width:100%;border-collapse:collapse;font-size:.9rem;">
+                                <tbody>
+                                    <tr data-key="arrendador" style="display:none;border-bottom:1px solid #e9ecef;">
+                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Arrendador</td>
+                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
+                                    </tr>
+                                    <tr data-key="arrendatario" style="display:none;border-bottom:1px solid #e9ecef;">
+                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Arrendatario</td>
+                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
+                                    </tr>
+                                    <tr data-key="propiedad" style="display:none;border-bottom:1px solid #e9ecef;">
+                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Propiedad</td>
+                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
+                                    </tr>
+                                    <tr data-key="administracion" style="display:none;border-bottom:1px solid #e9ecef;">
+                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">AdministraciÃ³n</td>
+                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
+                                    </tr>
+                                    <tr data-key="renta" style="display:none;border-bottom:1px solid #e9ecef;">
+                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Renta</td>
+                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
+                                    </tr>
+                                    <tr data-key="dia-pago-renta" style="display:none;border-bottom:1px solid #e9ecef;">
+                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">DÃ­a de pago</td>
+                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
+                                    </tr>
+                                    <tr data-key="comision-inicial" style="display:none;border-bottom:1px solid #e9ecef;">
+                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">ComisiÃ³n inicial</td>
+                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
+                                    </tr>
+                                    <tr data-key="egreso" style="display:none;border-bottom:1px solid #e9ecef;">
+                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Egreso / ComisiÃ³n mensual</td>
+                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
+                                    </tr>
+                                    <tr data-key="garantia" style="display:none;border-bottom:1px solid #e9ecef;">
+                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">GarantÃ­a</td>
+                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
+                                    </tr>
+                                    <tr data-key="servicios" style="display:none;border-bottom:1px solid #e9ecef;">
+                                        <td class="resumen-label" style="width:40%;padding:5px 8px 5px 0;color:#6c757d;font-weight:500;white-space:nowrap;">Servicios</td>
+                                        <td class="resumen-value" style="padding:5px 0;color:#212529;font-weight:600;"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -349,10 +410,11 @@ function loadPropiedadesPorArrendador(arrendadorId) {
             }
             selectEl.innerHTML = '<option value="">Seleccionar propiedad...</option>';
             if (!data.length) {
-                var emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = 'Sin propiedades registradas';
-                selectEl.appendChild(emptyOpt);
+                // Show text input directly when arrendador has no properties
+                selectEl.style.display = 'none';
+                inputEl.style.display = 'block';
+                // Return early so the "nueva" option is never added
+                return;
             } else {
                 data.forEach(function(item) {
                     var opt = document.createElement('option');
@@ -861,6 +923,24 @@ updateResumen(); renderServicioSelect(); actualizarVisibilidadBotonServicio();
                 }
                 if (comisionMensualInput && !noComisionMensualCheck.checked) {
                     comisionMensualInput.value = 0;
+                }
+            }
+
+            // Auto-fill commission when entering step 5 (!sin_administracion only)
+            if (wizard.step === 5 && !wizard.sin_administracion) {
+                var renta = parseInt(document.querySelector('[name="renta"]')?.value) || 0;
+                var comisionInput = document.getElementById('comisionMontoInput');
+                if (comisionInput && !comisionInput.value && renta > 0) {
+                    comisionInput.value = Math.floor(renta / 2);
+                }
+            }
+
+            // Auto-fill guarantee when entering step 7 (!sin_administracion only)
+            if (wizard.step === 7 && !wizard.sin_administracion) {
+                var rentaVal = document.querySelector('[name="renta"]')?.value || '';
+                var garantiaInput = document.getElementById('garantiaInput');
+                if (garantiaInput && !garantiaInput.value && rentaVal) {
+                    garantiaInput.value = rentaVal;
                 }
             }
         }

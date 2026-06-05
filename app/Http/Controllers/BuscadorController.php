@@ -43,7 +43,7 @@ class BuscadorController extends Controller
                 $resultados[] = [
                     'tipo'  => 'cliente',
                     'texto' => $this->getSearchText($item, ["nombre"]),
-                    'url'   => '/cliente/' . $item->id,
+                    'url'   => '/cliente/ficha/' . $item->id,
                 ];
             }
         }

@@ -11,7 +11,7 @@
                name="arrendador_nombre"
                class="form-control"
                value="{{ old('arrendador_nombre') }}"
-               placeholder="Buscar cliente..."
+               placeholder="Nombre del cliente"
                autocomplete="off"
                {{ old('propiedad_corredor') ? 'disabled' : '' }}>
         <div style="position:relative;">

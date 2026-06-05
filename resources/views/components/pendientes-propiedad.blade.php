@@ -11,7 +11,7 @@
     <div class="col-12">
          @if($pendientes->count())
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover table-card-mobile">
                 <thead>
                     <tr>
                         <th>Concepto</th>

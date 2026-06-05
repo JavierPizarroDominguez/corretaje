@@ -50,5 +50,4 @@ Route::get('/cliente/{id}/contratos', [FichaClienteController::class, 'contratos
 Route::get('/propiedad/ficha/{id}', [FichaPropiedadController::class, 'show'])->name('propiedad.ficha');
 Route::get('/propiedad/{id}/reparaciones', [FichaPropiedadController::class, 'reparaciones'])->name('propiedad.reparaciones');
 Route::get('/propiedad/{id}/contratos', [FichaPropiedadController::class, 'contratos'])->name('propiedad.contratos');
-Route::get('/cliente/ficha/{id}', fn () => view('coming-soon'))->name('cliente.ficha');
 // [GEN:END:custom_routes]

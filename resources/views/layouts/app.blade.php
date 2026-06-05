@@ -21,7 +21,7 @@
         <i class="ti ti-menu-2"></i>
     </button>
     @include('layouts.partials.sidebar')
-    <main id="content" class="content">
+    <main id="content" class="content pt-5 pt-md-0">
         {{-- Page-level loading overlay: visible by default, hidden on DOMContentLoaded --}}
         <div id="page-loading-overlay">
             <div class="text-center">

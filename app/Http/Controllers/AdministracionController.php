@@ -45,7 +45,7 @@ class AdministracionController extends Controller
 
             Session::flash('success', 'Administración creada exitosamente.');
 
-            return Redirect::route('contrato.show', ['contrato' => $contrato->id]);
+            return Redirect::route('propiedad.ficha', ['id' => $contrato->propiedad_id]);
         } catch (\Throwable $e) {
             Log::error('Error creating administracion', [
                 'exception' => $e->getMessage(),

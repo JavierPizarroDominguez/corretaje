@@ -9,7 +9,7 @@
 <div class="row">
     <div class="col-12">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle table-card-mobile">
                 <thead>
                     <tr>
                         <th>Fecha</th>
@@ -40,7 +40,7 @@
                             <td>${{ number_format($transaccion->monto, 0, ',', '.') }}
                             </td>
                             <td>{{ $cobro?->detalle ?? '—' }}</td>
-                            <td>
+                            <td class="d-none d-sm-table-cell">
                                 @if($cobro?->deudor)
                                         {{ $cobro->deudor?->nombre }}
 
@@ -48,14 +48,14 @@
                                     —
                                 @endif
                             </td>
-                            <td>
+                            <td class="d-none d-sm-table-cell">
                                 @if($cobro?->acreedor)
                                         {{ $cobro->acreedor?->nombre }}
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td><span class="badge bg-success">Pagado</span></td>
+                            <td class="d-none d-sm-table-cell"><span class="badge bg-success">Pagado</span></td>
                             <td>Ver</td>
                         </tr>
                     @endforeach

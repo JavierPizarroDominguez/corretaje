@@ -520,6 +520,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Reset Step 3 state when user clears or changes arrendador input (new user flow)
+    document.getElementById('input-arrendador').addEventListener('input', function() {
+        var hiddenId = document.getElementById('hidden-arrendador-id');
+        if (hiddenId && !hiddenId.value) {
+            resetStep3State();
+        }
+    });
+
     // Arrendatario autocomplete (step 2) â€” uses global buscador() from public/js/buscador.js
     buscador({
         input:    '#input-arrendatario',
@@ -893,6 +901,11 @@ updateResumen(); renderServicioSelect(); actualizarVisibilidadBotonServicio();
     if (btnAddArrendador) {
         btnAddArrendador.addEventListener('click', function(e) {
             e.preventDefault();
+            // If arrendador is new (no selection from buscador), show text input for Step 3
+            var hiddenId = document.getElementById('hidden-arrendador-id');
+            if (hiddenId && !hiddenId.value) {
+                showTextInputForNewPropiedad();
+            }
             callWizardNextStep();
         });
     }
@@ -1214,11 +1227,37 @@ updateResumen(); renderServicioSelect(); actualizarVisibilidadBotonServicio();
                     return;
                 }
             }
-        });
-    }
+});
+}
 
-    // Dynamic Resumen Panel
-    function updateResumen() {
+// Show text input for new propiedad when arrendador is new (no selection from buscador)
+function showTextInputForNewPropiedad() {
+    var selectEl = document.getElementById('propiedadSelect');
+    var inputEl  = document.getElementById('nuevaPropiedadInput');
+    var hiddenPropId = document.getElementById('hidden-propiedad-id');
+    if (!selectEl || !inputEl) return;
+    selectEl.style.display = 'none';
+    selectEl.value = '';
+    inputEl.style.display = 'block';
+    inputEl.value = '';
+    if (hiddenPropId) hiddenPropId.value = '';
+}
+
+// Reset Step 3 state when user clears/changes arrendador input
+function resetStep3State() {
+    var selectEl = document.getElementById('propiedadSelect');
+    var inputEl  = document.getElementById('nuevaPropiedadInput');
+    if (!selectEl || !inputEl) return;
+    selectEl.style.display = 'block';
+    selectEl.innerHTML = '<option value="">Seleccionar propiedad...</option><option value="nueva">➕ Agregar nueva propiedad</option>';
+    inputEl.style.display = 'none';
+    inputEl.value = '';
+    var hiddenPropId = document.getElementById('hidden-propiedad-id');
+    if (hiddenPropId) hiddenPropId.value = '';
+}
+
+// Dynamic Resumen Panel
+function updateResumen() {
         var resumenWrapper = document.getElementById('resumen-wrapper');
         if (!resumenWrapper) return;
 
@@ -1258,6 +1297,9 @@ updateResumen(); renderServicioSelect(); actualizarVisibilidadBotonServicio();
         var propiedadText = '';
         if (propiedadSelect) {
             if (propiedadSelect.value === 'nueva' && nuevaPropiedadInput && nuevaPropiedadInput.value.trim()) {
+                propiedadText = nuevaPropiedadInput.value.trim();
+            } else if (propiedadSelect.style.display === 'none' && nuevaPropiedadInput && nuevaPropiedadInput.value.trim()) {
+                // Select is hidden (new arrendador fallback path) — use the text input value directly
                 propiedadText = nuevaPropiedadInput.value.trim();
             } else if (propiedadSelect.value && propiedadSelect.value !== 'nueva') {
                 propiedadText = propiedadSelect.options[propiedadSelect.selectedIndex].text;

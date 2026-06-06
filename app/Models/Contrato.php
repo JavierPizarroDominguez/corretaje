@@ -102,7 +102,7 @@ class Contrato extends Model
 
 	public function clausulas()
 	{
-		return $this->belongsToMany(Clausula::class, 'clausula_contrato', 'Contrato_id', 'Clausula_id');
+		return $this->belongsToMany(Clausula::class, 'Clausula_Contrato', 'Contrato_id', 'Clausula_id');
 	}
 
 	public function cobros()

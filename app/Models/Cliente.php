@@ -96,6 +96,6 @@ class Cliente extends Model
 
 	public function telefonos()
 	{
-		return $this->belongsToMany(Telefono::class, 'telefono_cliente', 'Cliente_id', 'Telefono_id');
+		return $this->belongsToMany(Telefono::class, 'Telefono_Cliente', 'Cliente_id', 'Telefono_id');
 	}
 }

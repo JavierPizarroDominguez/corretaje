@@ -38,6 +38,6 @@ class Clausula extends Model
 
 	public function contratos()
 	{
-		return $this->belongsToMany(Contrato::class, 'clausula_contrato', 'Clausula_id', 'Contrato_id');
+		return $this->belongsToMany(Contrato::class, 'Clausula_Contrato', 'Clausula_id', 'Contrato_id');
 	}
 }

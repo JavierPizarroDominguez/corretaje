@@ -503,8 +503,22 @@
     justify-content: center;
   }
   /* Cells containing cobro buttons: stack vertically instead of flex row */
+  .table-card-mobile#tabla-pendientes tbody tr {
+    border: 2px solid #adb5bd;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  .table-card-mobile#tabla-pendientes tbody td {
+    justify-content: center;
+    text-align: center;
+  }
+  .table-card-mobile#tabla-pendientes tbody td:first-child {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
   .table-card-mobile#tabla-pendientes tbody td.td-cobros {
     display: block !important;
+    text-align: center;
   }
   .table-card-mobile#tabla-pendientes tbody td.td-cobros .mb-1 {
     margin-bottom: 0.5rem;

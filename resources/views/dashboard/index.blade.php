@@ -82,11 +82,10 @@
                 <h5 class="modal-title">Detalle del Cobro</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="modal-body-cobro"></div>
-            <div class="modal-footer">
-                <button id="btn-detallar" class="btn btn-secondary">Detallar pago</button>
-                <button id="btn-registrar" class="btn btn-primary">Registrar pago</button>
-            </div>
+                <div class="modal-body" id="modal-body-cobro"></div>
+                <div class="modal-footer">
+                    <button id="btn-registrar" class="btn btn-primary">Registrar pago</button>
+                </div>
         </div>
     </div>
 </div>
@@ -180,7 +179,7 @@
             return `
                 <div class="mb-1">
                     <button
-                        class="btn btn-sm btn-${color} w-100 text-start btn-cobro"
+                        class="btn btn-sm btn-${color} w-100 text-center btn-cobro"
                         data-cobro='${JSON.stringify(c)}'
                     >
                         ${c.concepto}
@@ -421,17 +420,27 @@
 
         const body = document.getElementById("modal-body-cobro");
 
+        const montoFormateado = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(cobro.monto);
+
+        let fechaPagoTexto = 'No definida';
+        if (cobro.fecha_cobro) {
+            const fecha = new Date(cobro.fecha_cobro);
+            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            fechaPagoTexto = `${fecha.getDate()} de ${meses[fecha.getMonth()]} de ${fecha.getFullYear()}`;
+        }
+
+        const deudorLink = cobro.deudor_id ? `<a href="/cliente/ficha/${cobro.deudor_id}" class="text-decoration-none">${cobro.deudor}</a>` : cobro.deudor;
+        const acreedorLink = cobro.acreedor_id ? `<a href="/cliente/ficha/${cobro.acreedor_id}" class="text-decoration-none">${cobro.acreedor}</a>` : cobro.acreedor;
+
         body.innerHTML = `
-            <p><b>Deudor:</b> ${cobro.deudor}</p>
-            <p><b>Monto:</b> $${cobro.monto}</p>
-            <p><b>Acreedor:</b> ${cobro.acreedor}</p>
-            <p><b>Fecha de pago:</b> Hoy</p>
+            <p><b>Tipo de cobro:</b> ${cobro.tipo}</p>
+            <p><b>Deudor:</b> ${deudorLink}</p>
+            <p><b>Acreedor:</b> ${acreedorLink}</p>
+            <p><b>Monto:</b> ${montoFormateado}</p>
+            <p><b>Fecha de pago:</b> ${fechaPagoTexto}</p>
         `;
 
         document.getElementById("btn-registrar").onclick = () => registrarPago(cobro);
-        document.getElementById("btn-detallar").onclick = () => {
-            window.location.href = `/cobro/${cobro.id}`;
-        };
 
         const modal = new bootstrap.Modal(document.getElementById('modalCobro'));
         modal.show();

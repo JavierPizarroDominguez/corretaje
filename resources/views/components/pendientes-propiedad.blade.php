@@ -10,8 +10,9 @@
 <div class="row">
     <div class="col-12">
          @if($pendientes->count())
-        <div class="table-responsive">
-            <table class="table table-hover table-card-mobile">
+        {{-- Desktop table (≥576px) --}}
+        <div class="table-responsive d-none d-sm-block">
+            <table class="table table-hover table-card-mobile ficha-pendientes-mobile">
                 <thead>
                     <tr>
                         <th>Concepto</th>
@@ -41,6 +42,45 @@
                 </tbody>
             </table>
         </div>
+        {{-- Mobile cards (<576px): colored estado badges --}}
+        <div class="d-sm-none">
+            @foreach($pendientes as $cobro)
+                @php
+                    $deudor = $cobro->deudor->cliente ?? null;
+                    $acreedor = $cobro->acreedor->cliente ?? null;
+                    $estado = $cobro->estado ?? 'pendiente';
+                    $estadoLabel = ucfirst($estado);
+                    if ($estado === 'pendiente') {
+                        $colorClass = 'warning';
+                    } elseif ($estado === 'vencido') {
+                        $colorClass = 'danger';
+                    } else {
+                        $colorClass = 'info';
+                    }
+                    $cobroData = [
+                        'id' => $cobro->id,
+                        'concepto' => $cobro->concepto,
+                        'tipo' => $cobro->tipo,
+                        'estado' => $estadoLabel,
+                        'monto' => $cobro->monto,
+                        'fecha_cobro' => $cobro->fecha_cobro?->toISOString() ?? null,
+                        'deudor' => $deudor->nombre ?? 'N/A',
+                        'deudor_id' => $deudor->id ?? null,
+                        'acreedor' => $acreedor->nombre ?? 'N/A',
+                        'acreedor_id' => $acreedor->id ?? null,
+                        'servicio_id' => $cobro->servicio_id,
+                    ];
+                @endphp
+                <div class="mb-2">
+                    <button
+                        class="btn btn-sm btn-{{ $colorClass }} w-100 text-center btn-cobro"
+                        data-cobro='@json($cobroData)'
+                    >
+                        {{ $cobro->concepto }}
+                    </button>
+                </div>
+            @endforeach
+        </div>
         <div class="mt-3">
             {{ $pendientes->links() }}
         </div>
@@ -48,7 +88,7 @@
             <div class="alert alert-light border">
                 No hay transacciones pendientes por el momento.
             </div>
-        @endif
+         @endif
     </div>
 </div>
 @php

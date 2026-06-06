@@ -543,6 +543,34 @@
   }
 }
 
+/* ========================================
+   MOBILE CONTENT PADDING — ficha pages
+   ======================================== */
+@media (max-width: 575.98px) {
+  .content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* ========================================
+   FICHA PENDIENTES CARD OVERRIDES
+   Mobile card style matching dashboard patterns
+   ======================================== */
+@media (max-width: 575.98px) {
+  .table-card-mobile.ficha-pendientes-mobile tbody tr {
+    border: 2px solid #adb5bd;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  .table-card-mobile.ficha-pendientes-mobile .btn-cobro {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    display: block;
+    width: 100%;
+  }
+}
+
 @media (max-width: 575.98px) {
   h1 { font-size: 1.5rem !important; }
   h2 { font-size: 1.35rem !important; }

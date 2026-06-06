@@ -520,12 +520,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Reset Step 3 state when user clears or changes arrendador input (new user flow)
+    // Reset Step 3 state when user clears or changes arrendador input
+    // Any typing in the arrendador input invalidates the previous selection
     document.getElementById('input-arrendador').addEventListener('input', function() {
         var hiddenId = document.getElementById('hidden-arrendador-id');
-        if (hiddenId && !hiddenId.value) {
-            resetStep3State();
+        if (hiddenId) {
+            hiddenId.value = '';
         }
+        resetStep3State();
     });
 
     // Arrendatario autocomplete (step 2) â€” uses global buscador() from public/js/buscador.js

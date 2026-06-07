@@ -67,6 +67,72 @@
     });
   };
 
+  /* ---- CLP currency formatting utilities ---- */
+  /**
+   * Format a numeric value as CLP: $1.234.567 (no decimals).
+   * @param {number|string} value - Raw numeric value
+   * @returns {string} Formatted string like "$500.000"
+   */
+  window.formatCLP = function(value) {
+    var num = parseInt(String(value).replace(/[^0-9]/g, ''), 10);
+    if (isNaN(num) || num === 0) return '$0';
+    return '$' + num.toLocaleString('es-CL');
+  };
+
+  /**
+   * Strip CLP formatting to get raw numeric string.
+   * @param {string} formatted - Formatted string like "$500.000"
+   * @returns {string} Raw digits like "500000"
+   */
+  window.stripCLP = function(formatted) {
+    return String(formatted).replace(/[^0-9]/g, '');
+  };
+
+  /**
+   * Handle real-time CLP formatting while typing.
+   * Formats the input value and preserves cursor position relative to digits.
+   * @param {HTMLInputElement} input - The CLP input element
+   */
+  window.handleCLPInput = function(input) {
+    var raw = window.stripCLP(input.value);
+    if (!raw) {
+      input.value = '';
+      return;
+    }
+
+    // Save cursor position relative to digits before formatting
+    var selectionStart = input.selectionStart;
+    var valueBeforeCursor = input.value.substring(0, selectionStart);
+    var digitsBeforeCursor = valueBeforeCursor.replace(/\D/g, '').length;
+
+    // Format the value
+    var formatted = window.formatCLP(raw);
+    input.value = formatted;
+
+    // Restore cursor position relative to digits
+    var newPos = 0;
+    var digitCount = 0;
+    for (var i = 0; i < formatted.length; i++) {
+      if (/\d/.test(formatted[i])) {
+        digitCount++;
+        if (digitCount >= digitsBeforeCursor) {
+          newPos = i + 1;
+          break;
+        }
+      }
+    }
+    // If we haven't set newPos (e.g., cursor at end), place after last digit
+    if (newPos === 0 && digitCount > 0) {
+      for (var j = formatted.length - 1; j >= 0; j--) {
+        if (/\d/.test(formatted[j])) {
+          newPos = j + 1;
+          break;
+        }
+      }
+    }
+    input.setSelectionRange(newPos, newPos);
+  };
+
   /* ---- Remove loading-placeholder rows on DOM ready ---- */
   document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.loading-placeholder').forEach(function (el) {

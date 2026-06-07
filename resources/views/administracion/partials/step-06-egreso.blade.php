@@ -2,23 +2,27 @@
 <div class="row mb-3" id="step-egreso">
     <div class="col-md-6">
         <label for="egresoRentaInput">Transferencia al Arrendador</label>
-        <input type="number"
+        <input type="text"
+               inputmode="numeric"
                id="egresoRentaInput"
                name="egreso_renta"
                class="form-control"
-               min="0"
-               value="{{ old('egreso_renta') }}">
+               value="{{ old('egreso_renta') }}"
+               oninput="window.handleCLPInput(this)"
+               onfocus="if(this.value) this.value = window.stripCLP(this.value)">
         @error('egreso_renta')
             <span class="text-danger">{{ $message }}</span>
         @enderror
 
         <label for="comisionMensualInput" class="mt-2">Comisión Mensual</label>
-        <input type="number"
+        <input type="text"
+               inputmode="numeric"
                id="comisionMensualInput"
                name="comision_mensual"
                class="form-control"
-               min="0"
-               value="{{ old('comision_mensual') }}">
+               value="{{ old('comision_mensual') }}"
+               oninput="window.handleCLPInput(this)"
+               onfocus="if(this.value) this.value = window.stripCLP(this.value)">
         @error('comision_mensual')
             <span class="text-danger">{{ $message }}</span>
         @enderror

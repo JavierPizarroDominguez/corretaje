@@ -18,19 +18,19 @@ The system MUST validate all 19 fields via `CrearAdministracionRequest` before e
 | `direccion` | `required\|string\|max:150` | Required |
 | `administracion` | `required\|boolean` | Required |
 | `renta` | `required_if:administracion,1\|nullable\|integer\|min:0` | Required when administracion is active |
-| `dia_pago` | `required_if:administracion,1\|nullable\|integer\|min:1\|max:31` | Required when administracion is active, 1-31 |
+| `dia_pago` | `required_if:administracion,1\|nullable\|integer\|between:1,28` | Required when administracion is active, 1-28 |
 | `comision_inicial` | `nullable\|integer\|min:0` | Must be non-negative integer |
 | `cobro_arrendador` | `nullable\|boolean` | Must be true/false |
 | `cobro_arrendatario` | `nullable\|boolean` | Must be true/false |
 | `garantia` | `nullable\|integer\|min:0` | Must be non-negative integer |
 | `comision_mensual` | `nullable\|integer\|min:0` | Must be non-negative integer |
-| `dia_luz` | `nullable\|integer\|min:1\|max:31` | 1-31 if provided |
+| `dia_luz` | `nullable\|integer\|between:1,28` | 1-28 if provided |
 | `monto_luz` | `nullable\|integer\|min:0` | Non-negative if provided |
-| `dia_agua` | `nullable\|integer\|min:1\|max:31` | 1-31 if provided |
+| `dia_agua` | `nullable\|integer\|between:1,28` | 1-28 if provided |
 | `monto_agua` | `nullable\|integer\|min:0` | Non-negative if provided |
-| `dia_gas` | `nullable\|integer\|min:1\|max:31` | 1-31 if provided |
+| `dia_gas` | `nullable\|integer\|between:1,28` | 1-28 if provided |
 | `monto_gas` | `nullable\|integer\|min:0` | Non-negative if provided |
-| `dia_gastos` | `nullable\|integer\|min:1\|max:31` | 1-31 if provided |
+| `dia_gastos` | `nullable\|integer\|between:1,28` | 1-28 if provided |
 | `monto_gastos` | `nullable\|integer\|min:0` | Non-negative if provided |
 
 #### Scenario: Missing arrendador fails validation
@@ -50,6 +50,24 @@ The system MUST validate all 19 fields via `CrearAdministracionRequest` before e
 - WHEN POST /administracion with `comision_inicial = -500`
 - THEN response is 422 with error on `comision_inicial`
 
+#### Scenario: dia_pago=29 fails validation
+
+- GIVEN `administracion = 1`
+- WHEN POST /administracion with `dia_pago = 29`
+- THEN response is 422 with error on `dia_pago`
+
+#### Scenario: dia_pago=28 passes validation
+
+- GIVEN `administracion = 1`
+- WHEN POST /administracion with `dia_pago = 28`
+- THEN validation passes for `dia_pago`
+
+#### Scenario: servicio dia=30 fails validation
+
+- GIVEN `servicios = [{tipo: 'Luz', dia: 30}]`
+- WHEN POST /administracion
+- THEN response is 422 with error on `servicios.0.dia`
+
 ### Requirement: Atomic entity creation
 
 The system MUST create all entities within a single `DB::transaction()`. On any exception, ALL database changes MUST be rolled back — zero partial rows remain. Every Cobro row created in the transaction MUST have `Propiedad_id` and `Unidad_id` populated (not NULL).
@@ -60,7 +78,7 @@ The system MUST create all entities within a single `DB::transaction()`. On any 
 - WHEN POST /administracion succeeds
 - THEN exactly 2 new Cliente rows (arrendador, arrendatario), 1 Propiedad, 1 Unidad, 1 Contrato, 3 ParticipanteContrato (Arrendador, Arrendatario, Corredor), 6 Cobro rows (Comision inicial arrendador x1, Comision inicial arrendatario x1, Ingreso Renta Arrendatario x1, Egreso Renta Arrendador x1, Ingreso Garantia Arrendatario x1, Egreso Garantia Arrendador x1), 12 ParticipanteCobro rows (2 per Cobro), and 0-4 Servicio rows (one per servicio with dia_pago set) are created
 - AND every Cobro row has Propiedad_id and Unidad_id populated (not NULL)
-- AND HTTP 302 redirect to success page
+- AND HTTP 302 redirect to `propiedad.ficha` for the correct property
 
 #### Scenario: Transaction rollback on failure
 
@@ -86,6 +104,49 @@ Every Cobro created by the wizard MUST have `Propiedad_id` and `Unidad_id` popul
 - GIVEN Propiedad "Av. Italia 100" exists with id=10, Unidad id=20
 - WHEN POST /administracion with `direccion = "Av. Italia 100"`, administracion=true
 - THEN all created Cobro rows have Propiedad_id=10 and Unidad_id=20
+
+### Requirement: Redirect after successful creation
+
+After successfully creating an administracion, the system MUST redirect to `propiedad.ficha` using the property ID derived from `$contrato->unidad->Propiedad_id`. The Contrato model MUST have the `unidad` relationship eager-loaded before accessing `Propiedad_id` to avoid lazy-load failures.
+
+#### Scenario: Redirect uses unidad->Propiedad_id
+
+- GIVEN valid administracion input that creates a new Contrato linked to Unidad id=5
+- AND Unidad id=5 has Propiedad_id=10
+- WHEN POST /administracion succeeds
+- THEN redirect goes to `propiedad.ficha` with `id=10`
+
+#### Scenario: Eager-load prevents lazy-load crash
+
+- GIVEN a Contrato is created successfully
+- WHEN the redirect is computed
+- THEN `$contrato->unidad` is already loaded (no additional query needed)
+- AND `$contrato->unidad->Propiedad_id` returns the correct integer
+
+### Requirement: Comisión mensual auto-initialization
+
+When the user enters step 6 (Egreso) for the first time, the system MUST initialize `comision_mensual` to `Math.round(renta * 0.1)` (10% of renta, rounded). When the user changes the `renta` field AFTER step 6 has been visited, the system MUST recalculate `comision_mensual` and `egreso_renta` accordingly.
+
+#### Scenario: Step 6 entry initializes comision to 10% of renta
+
+- GIVEN user is on step 5, renta=500000
+- WHEN user advances to step 6
+- THEN `comision_mensual` input is set to 50000 (10% of 500000)
+- AND `egreso_renta` input is set to 450000 (renta - comision)
+
+#### Scenario: Renta change after step 6 visit recalculates
+
+- GIVEN user has visited step 6, renta was 500000, comision_mensual was 50000
+- WHEN user navigates back to step 4 and changes renta to 600000
+- THEN `comision_mensual` is recalculated to 60000 (10% of 600000)
+- AND `egreso_renta` is recalculated to 540000
+
+#### Scenario: NoComisionMensual checkbox overrides auto-calc
+
+- GIVEN user enters step 6, renta=500000
+- WHEN user checks "No generar comisión"
+- THEN `comision_mensual` is set to 0
+- AND `egreso_renta` is set to renta (500000)
 
 ### Requirement: Corredor as arrendador edge case
 
@@ -150,6 +211,43 @@ The system MUST use `firstOrCreate` for Cliente (by nombre) and Propiedad (by di
 - WHEN POST /administracion with `direccion = "Av. Libertador 1234"`
 - THEN no new Propiedad row is created
 - AND a new Unidad is created linked to Propiedad id=10
+
+### Requirement: Frontend dia_pago validation range
+
+The wizard frontend MUST reject dia_pago values outside 1-28 in step 4 and step 8 service day inputs. The `dayOutOfRange` flag MUST be set when `dia < 1 || dia > 28`.
+
+#### Scenario: Frontend rejects dia_pago=29 in step 4
+
+- GIVEN user is on step 4
+- WHEN user enters `dia_pago = 29` and clicks "Añadir"
+- THEN validation error is shown: "El día de pago debe estar entre 1 y 28"
+
+#### Scenario: Frontend rejects service dia=31 in step 8
+
+- GIVEN user is adding a service in step 8
+- WHEN user enters `dia = 31` and confirms
+- THEN the service is marked with `dayOutOfRange = true`
+- AND form submission is blocked with error message
+
+#### Scenario: Frontend accepts dia_pago=28
+
+- GIVEN user is on step 4
+- WHEN user enters `dia_pago = 28` and clicks "Añadir"
+- THEN validation passes and user proceeds to next step
+
+### Requirement: ContratoController dia_pago validation
+
+The CRUD ContratoController MUST validate `dia_pago` as `between:1,28` in its `store` and `update` methods.
+
+#### Scenario: CRUD create rejects dia_pago=30
+
+- WHEN POST /contrato with `dia_pago = 30`
+- THEN validation fails
+
+#### Scenario: CRUD create accepts dia_pago=15
+
+- WHEN POST /contrato with `dia_pago = 15`
+- THEN validation passes
 
 ### Requirement: Servicio creation is conditional on dia_pago
 

@@ -2,12 +2,14 @@
 <div class="row mb-3" id="step-garantia">
     <div class="col-md-6">
         <label for="garantiaInput">Monto garantía</label>
-        <input type="number"
+        <input type="text"
+               inputmode="numeric"
                id="garantiaInput"
                name="garantia"
                class="form-control"
-               min="0"
-               value="{{ old('garantia') }}">
+               value="{{ old('garantia') }}"
+               oninput="window.handleCLPInput(this)"
+               onfocus="if(this.value) this.value = window.stripCLP(this.value)">
         @error('garantia')
             <span class="text-danger">{{ $message }}</span>
         @enderror

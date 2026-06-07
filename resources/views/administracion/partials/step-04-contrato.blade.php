@@ -2,13 +2,15 @@
 <div class="row mb-3" id="step-administracion">
     <div class="col-md-6">
         <label for="rentaInput">Monto de renta</label>
-        <input type="number"
+        <input type="text"
+               inputmode="numeric"
                id="rentaInput"
                name="renta"
                class="form-control"
                placeholder="Ej: 500000"
-               min="0"
-               value="{{ old('renta') }}">
+               value="{{ old('renta') }}"
+               oninput="window.handleCLPInput(this)"
+               onfocus="if(this.value) this.value = window.stripCLP(this.value)">
         @error('renta')
             <span class="text-danger">{{ $message }}</span>
         @enderror
@@ -20,7 +22,7 @@
                class="form-control"
                placeholder="Ej: 5"
                min="1"
-               max="31"
+               max="28"
                value="{{ old('dia_pago') }}">
         @error('dia_pago')
             <span class="text-danger">{{ $message }}</span>

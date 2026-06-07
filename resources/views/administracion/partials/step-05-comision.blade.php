@@ -2,13 +2,15 @@
 <div class="row mb-3" id="step-comision">
     <div class="col-md-6">
         <label for="comisionMontoInput">Monto comisión inicial</label>
-        <input type="number"
+        <input type="text"
+               inputmode="numeric"
                id="comisionMontoInput"
                name="comision_inicial"
                class="form-control"
                placeholder="Ej: 200000"
-               min="0"
-               value="{{ old('comision_inicial') }}">
+               value="{{ old('comision_inicial') }}"
+               oninput="window.handleCLPInput(this)"
+               onfocus="if(this.value) this.value = window.stripCLP(this.value)">
         @error('comision_inicial')
             <span class="text-danger">{{ $message }}</span>
         @enderror

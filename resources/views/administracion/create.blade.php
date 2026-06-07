@@ -569,7 +569,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getRentaNumero() {
         var rentaInput = document.querySelector('[name="renta"]');
-        return parseInt(rentaInput ? rentaInput.value : 0) || 0;
+        var raw = rentaInput ? rentaInput.value : '0';
+        return parseInt(window.stripCLP(raw)) || 0;
     }
 
     // Sync sin_administracion checkbox with Alpine + snapshot
@@ -718,34 +719,55 @@ document.addEventListener('DOMContentLoaded', function() {
             comisionMensualInput.disabled = this.checked;
             egresoRentaInput.disabled = this.checked;
             if (this.checked) {
-                comisionMensualInput.value = 0;
-                egresoRentaInput.value = renta;
+                comisionMensualInput.value = '0';
+                egresoRentaInput.value = window.formatCLP(renta);
             } else {
-                egresoRentaInput.value = renta > 0 ? renta : '';
-                comisionMensualInput.value = 0;
+                egresoRentaInput.value = renta > 0 ? window.formatCLP(renta) : '';
+                comisionMensualInput.value = renta > 0 ? window.formatCLP(Math.round(renta * 0.1)) : '';
             }
         });
 
         egresoRentaInput.addEventListener('input', function() {
             if (noComisionMensual.checked) return;
             var renta = getRentaNumero();
-            var egreso = parseInt(this.value) || 0;
+            var egreso = parseInt(window.stripCLP(this.value)) || 0;
             // egreso capped at renta, but must be at least half of renta (comision <= egreso)
             egreso = Math.min(egreso, renta);
             egreso = Math.max(egreso, Math.ceil(renta / 2));
-            this.value = egreso;
-            comisionMensualInput.value = renta - egreso;
+            this.value = window.formatCLP(egreso);
+            comisionMensualInput.value = window.formatCLP(renta - egreso);
         });
 
         comisionMensualInput.addEventListener('input', function() {
             if (noComisionMensual.checked) return;
             var renta = getRentaNumero();
-            var comision = parseInt(this.value) || 0;
+            var comision = parseInt(window.stripCLP(this.value)) || 0;
             // comision cannot exceed egreso, so at most half of renta
             var maxComision = Math.floor(renta / 2);
             comision = Math.max(0, Math.min(comision, maxComision));
-            this.value = comision;
-            egresoRentaInput.value = renta - comision;
+            this.value = window.formatCLP(comision);
+            egresoRentaInput.value = window.formatCLP(renta - comision);
+        });
+    }
+
+    // Recalculate comision + egreso when renta changes after step 6 has been visited
+    var rentaInput = document.querySelector('[name="renta"]');
+    if (rentaInput) {
+        rentaInput.addEventListener('input', function() {
+            var alpineEl = document.querySelector('[x-data]');
+            if (!alpineEl || !alpineEl._x_dataStack) return;
+            var wizard = alpineEl._x_dataStack[0];
+            if (!wizard.step6Visited) return;
+            var noComision = document.getElementById('noComisionMensual');
+            if (noComision && noComision.checked) return;
+            var renta = getRentaNumero();
+            var comisionInput = document.getElementById('comisionMensualInput');
+            var egresoInput = document.getElementById('egresoRentaInput');
+            if (comisionInput && egresoInput && renta > 0) {
+                var comision = Math.round(renta * 0.1);
+                comisionInput.value = window.formatCLP(comision);
+                egresoInput.value = window.formatCLP(renta - comision);
+            }
         });
     }
 
@@ -797,7 +819,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var wizard = alpineEl._x_dataStack[0];
                 var texto = tipo + ' (Día ' + dia + ')' + (monto ? ' - $' + Number(monto).toLocaleString() : '');
                 var serv = { tipo: tipo, dia: dia, monto: monto, texto: texto };
-                if (dia < 1 || dia > 31) { serv.dayOutOfRange = true; }
+                if (dia < 1 || dia > 28) { serv.dayOutOfRange = true; }
                 wizard.servicios.push(serv);
 
                 inputsServicio.style.display = 'none';
@@ -867,29 +889,38 @@ updateResumen(); renderServicioSelect(); actualizarVisibilidadBotonServicio();
                 var egresoInput = document.getElementById('egresoRentaInput');
                 var comisionMensualInput = document.getElementById('comisionMensualInput');
                 var noComisionMensualCheck = document.getElementById('noComisionMensual');
-                if (rentaInput && egresoInput) {
-                    egresoInput.value = rentaInput.value || '';
+                var rentaVal = parseInt(window.stripCLP(rentaInput ? rentaInput.value : '')) || 0;
+                if (rentaVal > 0) {
+                    var comision = Math.round(rentaVal * 0.1);
+                    if (egresoInput) egresoInput.value = window.formatCLP(rentaVal - comision);
+                    if (comisionMensualInput && !noComisionMensualCheck.checked) {
+                        comisionMensualInput.value = window.formatCLP(comision);
+                    }
+                } else {
+                    if (egresoInput) egresoInput.value = '';
+                    if (comisionMensualInput && !noComisionMensualCheck.checked) {
+                        comisionMensualInput.value = '';
+                    }
                 }
-                if (comisionMensualInput && !noComisionMensualCheck.checked) {
-                    comisionMensualInput.value = 0;
-                }
+                wizard.step6Visited = true;
             }
 
             // Auto-fill commission when entering step 5 (!sin_administracion only)
             if (wizard.step === 5 && !wizard.sin_administracion) {
-                var renta = parseInt(document.querySelector('[name="renta"]')?.value) || 0;
+                var renta = parseInt(window.stripCLP(document.querySelector('[name="renta"]')?.value || '')) || 0;
                 var comisionInput = document.getElementById('comisionMontoInput');
                 if (comisionInput && !comisionInput.value && renta > 0) {
-                    comisionInput.value = Math.floor(renta / 2);
+                    comisionInput.value = window.formatCLP(Math.floor(renta / 2));
                 }
             }
 
             // Auto-fill guarantee when entering step 7 (!sin_administracion only)
             if (wizard.step === 7 && !wizard.sin_administracion) {
-                var rentaVal = document.querySelector('[name="renta"]')?.value || '';
+                var rentaValRaw = document.querySelector('[name="renta"]')?.value || '';
+                var rentaVal = parseInt(window.stripCLP(rentaValRaw)) || 0;
                 var garantiaInput = document.getElementById('garantiaInput');
                 if (garantiaInput && !garantiaInput.value && rentaVal) {
-                    garantiaInput.value = rentaVal;
+                    garantiaInput.value = window.formatCLP(rentaVal);
                 }
             }
         }
@@ -1120,7 +1151,12 @@ updateResumen(); renderServicioSelect(); actualizarVisibilidadBotonServicio();
                 var r = document.querySelector('[name="renta"]');
                 if (r && !r.value.trim()) { showWizardError('El monto de la renta es obligatorio.'); return false; }
                 var d = document.querySelector('[name="dia_pago"]');
-                if (d && !d.value.trim()) {                 showWizardError('El día de pago es obligatorio.'); return false; }
+                if (d && !d.value.trim()) { showWizardError('El día de pago es obligatorio.'); return false; }
+                var diaVal = parseInt(d ? d.value.trim() : '');
+                if (isNaN(diaVal) || diaVal < 1 || diaVal > 28) {
+                    showWizardError('El día de pago debe ser un número entre 1 y 28.');
+                    return false;
+                }
             }
         }
         if (stepNum === 5) {
@@ -1131,9 +1167,9 @@ updateResumen(); renderServicioSelect(); actualizarVisibilidadBotonServicio();
                     showWizardError('El monto de la comisión inicial es obligatorio.'); return false;
                 }
                 if (c && c.value.trim() && !document.getElementById('noComisionInicial').checked) {
-                    var renta = parseInt(document.querySelector('[name="renta"]')?.value || 0) || 0;
-                    var comision = parseInt(c.value) || 0;
-                    if (comision > renta) {
+                    var renta = parseInt(window.stripCLP(document.querySelector('[name="renta"]')?.value || '')) || 0;
+                    var comision = parseInt(window.stripCLP(c.value)) || 0;
+                    if (c.value.trim() !== '' && comision > renta) {
                         showWizardError('La comisión inicial no puede ser mayor que la renta ($' + renta.toLocaleString() + ').');
                         return false;
                     }
@@ -1164,8 +1200,8 @@ updateResumen(); renderServicioSelect(); actualizarVisibilidadBotonServicio();
                 var wizard = alpineEl._x_dataStack[0];
                 if (wizard.servicios && wizard.servicios.length) {
                     var invalid = wizard.servicios.find(function(s) { return s.dayOutOfRange; });
-                    if (invalid) {
-                        showWizardError('El servicio "' + invalid.tipo + '" tiene un día de pago inva lido. Debe estar entre 1 y 31.');
+if (invalid) {
+                        showWizardError('El servicio "' + invalid.tipo + '" tiene un día de pago inva_lido. Debe estar entre 1 y 28.');
                         return false;
                     }
                 }
@@ -1221,6 +1257,20 @@ updateResumen(); renderServicioSelect(); actualizarVisibilidadBotonServicio();
             if (!alpineEl || !alpineEl._x_dataStack) return;
             var wizard = alpineEl._x_dataStack[0];
 
+// Strip CLP formatting from all monetary inputs before submit
+            var monetaryFields = ['renta', 'comision_inicial', 'egreso_renta', 'comision_mensual', 'garantia'];
+            monetaryFields.forEach(function(name) {
+                var el = document.querySelector('[name="' + name + '"]');
+                if (el && el.value) {
+                    el.value = window.stripCLP(el.value);
+                }
+            });
+            // Strip servicios hidden monto inputs
+            var servMontoInputs = document.querySelectorAll('[name^="servicios["][name$="[monto]"]');
+            servMontoInputs.forEach(function(el) {
+                if (el.value) el.value = window.stripCLP(el.value);
+            });
+
             // Validate every step before allowing submission
             for (var stepNum = 1; stepNum <= 8; stepNum++) {
                 if (!await validateStep(stepNum)) {
@@ -1229,8 +1279,8 @@ updateResumen(); renderServicioSelect(); actualizarVisibilidadBotonServicio();
                     return;
                 }
             }
-});
-}
+        });
+    }
 
 // Show text input for new propiedad when arrendador is new (no selection from buscador)
 function showTextInputForNewPropiedad() {

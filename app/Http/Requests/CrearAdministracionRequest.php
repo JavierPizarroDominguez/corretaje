@@ -84,7 +84,7 @@ class CrearAdministracionRequest extends FormRequest
 
             // Contrato (legacy step 4)
             'renta' => ['nullable', 'integer', 'min:1', 'required_if:sin_administracion,0', 'required_if:sin_administracion,null'],
-            'dia_pago' => ['nullable', 'integer', 'between:1,31'],
+            'dia_pago' => ['nullable', 'integer', 'between:1,28'],
             'sin_administracion' => ['nullable', 'boolean'],
 
             // Comisión Inicial (legacy step 5)
@@ -105,7 +105,7 @@ class CrearAdministracionRequest extends FormRequest
             // Servicios (legacy step 8 - dynamic array)
             'servicios' => ['nullable', 'array'],
             'servicios.*.tipo' => ['required', 'string'],
-            'servicios.*.dia' => ['nullable', 'integer', 'between:1,31'],
+            'servicios.*.dia' => ['nullable', 'integer', 'between:1,28'],
             'servicios.*.monto' => ['nullable'],
 
             // Fechas
@@ -132,7 +132,7 @@ class CrearAdministracionRequest extends FormRequest
             'renta.required' => 'El monto de la renta es obligatorio.',
             'renta.integer' => 'La renta debe ser un número entero.',
             'renta.min' => 'La renta debe ser mayor que 0.',
-            'dia_pago.between' => 'El día de pago debe estar entre 1 y 31.',
+            'dia_pago.between' => 'El día de pago debe estar entre 1 y 28.',
             'fecha_inicio.required' => 'La fecha de inicio es obligatoria.',
             'fecha_termino.after' => 'La fecha de término debe ser posterior a la fecha de inicio.',
             'servicios.*.tipo.required' => 'El tipo de servicio es obligatorio.',

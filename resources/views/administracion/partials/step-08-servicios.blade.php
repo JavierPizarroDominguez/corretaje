@@ -19,7 +19,7 @@
                        id="servicioDiaPagoInput"
                        class="form-control mb-2"
                        min="1"
-                       max="31">
+                       max="28">
             </div>
             <div id="grupo-monto-check" class="form-check mb-2">
                 <input type="checkbox"
@@ -28,12 +28,14 @@
                 <label class="form-check-label">Este servicio cobra un monto fijo</label>
             </div>
             <div id="grupo-monto">
-                <input type="number"
+                <input type="text"
+                       inputmode="numeric"
                        id="servicioMontoInput"
                        class="form-control mb-2"
-                       min="0"
                        style="display:none;"
-                       disabled>
+                       disabled
+                       oninput="window.handleCLPInput(this)"
+                       onfocus="if(this.value) this.value = window.stripCLP(this.value)">
             </div>
             <button type="button" id="btnConfirmarServicio" class="btn btn-success mb-3">Confirmar servicio</button>
         </div>

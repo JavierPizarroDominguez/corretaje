@@ -42,10 +42,18 @@ class AdministracionController extends Controller
     {
         try {
             $contrato = $service->crearAdministracion($request);
+            $contrato->load('unidad');
+
+            $propiedadId = $contrato->unidad?->Propiedad_id;
+            if (!$propiedadId) {
+                Log::warning('Contrato created without unidad relationship', ['contrato_id' => $contrato->id]);
+                Session::flash('success', 'Administración creada exitosamente.');
+                return Redirect::route('dashboard');
+            }
 
             Session::flash('success', 'Administración creada exitosamente.');
 
-            return Redirect::route('propiedad.ficha', ['id' => $contrato->propiedad_id]);
+            return Redirect::route('propiedad.ficha', ['id' => $propiedadId]);
         } catch (\Throwable $e) {
             Log::error('Error creating administracion', [
                 'exception' => $e->getMessage(),
@@ -80,7 +88,7 @@ class AdministracionController extends Controller
         }
 
         if (str_contains($message, 'chk_dia_pago_contrato')) {
-            return 'El día de pago debe estar entre 1 y 31.';
+            return 'El día de pago debe estar entre 1 y 28.';
         }
 
         if (str_contains($message, 'chk_datos_administracion')) {

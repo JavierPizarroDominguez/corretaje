@@ -90,17 +90,20 @@ class CrearAdministracionRequestTest extends TestCase
         $this->assertArrayHasKey('renta', $validator->errors()->toArray());
     }
 
-    public function test_dia_pago_must_be_between_1_and_31(): void
+    public function test_dia_pago_must_be_between_1_and_28(): void
     {
         $validator = $this->validate(array_merge($this->validData(), ['dia_pago' => 0]));
         $this->assertTrue($validator->fails());
         $this->assertArrayHasKey('dia_pago', $validator->errors()->toArray());
 
-        $validator = $this->validate(array_merge($this->validData(), ['dia_pago' => 32]));
+        $validator = $this->validate(array_merge($this->validData(), ['dia_pago' => 29]));
         $this->assertTrue($validator->fails());
 
         $validator = $this->validate(array_merge($this->validData(), ['dia_pago' => 15]));
         $this->assertTrue($validator->passes(), 'dia_pago=15 must be valid');
+
+        $validator = $this->validate(array_merge($this->validData(), ['dia_pago' => 28]));
+        $this->assertTrue($validator->passes(), 'dia_pago=28 must be valid');
     }
 
     public function test_fecha_inicio_is_optional(): void

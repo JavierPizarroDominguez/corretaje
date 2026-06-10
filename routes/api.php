@@ -21,4 +21,6 @@ use App\Http\Controllers\Api\PagarCobroController;
 Route::get('/dashboard/pendientes', [DashboardPendientesController::class, 'index'])->name('api.dashboard.pendientes');
 Route::get('/dashboard/buscador', [DashboardBuscadorController::class, 'search'])->name('api.dashboard.buscador');
 Route::post('/cobro/pagar', [PagarCobroController::class, 'pagar'])->name('api.cobro.pagar');
+Route::get('/cliente/{id}/pendientes', [App\Http\Controllers\Api\ClientePendientesController::class, 'index'])->name('api.cliente.pendientes');
+Route::get('/propiedad/{id}/pendientes', [App\Http\Controllers\Api\PropiedadPendientesController::class, 'index'])->name('api.propiedad.pendientes');
 // [GEN:END:dashboard_api]

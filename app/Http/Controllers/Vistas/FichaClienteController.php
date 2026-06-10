@@ -12,10 +12,14 @@ use App\Models\Servicio;
 use App\Models\Propiedad;
 use App\Models\Unidad;
 use App\Models\ParticipanteCobro;
+use App\Services\CobroConceptoFormatter;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 
 class FichaClienteController extends Controller
 {
+    private const PENDIENTES_PROPERTY_GROUPS_PER_PAGE = 3;
+
     /**
      * Shared base query for Cobro scoped to a client.
      * Used by show(), reparaciones().
@@ -27,7 +31,9 @@ class FichaClienteController extends Controller
                 'deudor.cliente',
                 'acreedor.cliente',
                 'contrato.unidad.propiedad',
+                'contrato.participante_contratos',
                 'servicio',
+                'participante_cobros.cliente',
             ])
             ->whereHas('participante_cobros', function ($q) use ($id) {
                 $q->where('Cliente_id', $id);
@@ -55,45 +61,163 @@ class FichaClienteController extends Controller
         $baseQuery = $this->baseQuery($id);
 
         //PENDIENTES
+        $estadosPendientes = [
+            'pendiente',
+            'vencido',
+            'incompleto',
+        ];
+        $pendientesPage = max(1, (int) request()->query('pendientes_page', 1));
+
+        $propiedadIds = (clone $baseQuery)
+            ->whereIn('estado', $estadosPendientes)
+            ->whereNotNull('Propiedad_id')
+            ->orderBy('Propiedad_id')
+            ->distinct()
+            ->pluck('Propiedad_id');
+
+        $totalPendienteGroups = $propiedadIds->count();
+        $propiedadIdsPaginated = $propiedadIds->slice(
+            ($pendientesPage - 1) * self::PENDIENTES_PROPERTY_GROUPS_PER_PAGE,
+            self::PENDIENTES_PROPERTY_GROUPS_PER_PAGE
+        )->values();
+
         $pendientes = (clone $baseQuery)
-            ->whereIn('estado', [
-                'pendiente',
-                'vencido',
-                'incompleto',
-            ])
+            ->whereIn('estado', $estadosPendientes)
+            ->whereIn('Propiedad_id', $propiedadIdsPaginated)
+            ->orderBy('Propiedad_id')
             ->latest('fecha_cobro')
-            ->paginate(10, ['*'], 'pendientes_page');
+            ->get();
+
+        $pendientesPaginator = new LengthAwarePaginator(
+            $propiedadIdsPaginated,
+            $totalPendienteGroups,
+            self::PENDIENTES_PROPERTY_GROUPS_PER_PAGE,
+            $pendientesPage,
+            [
+                'path' => request()->url(),
+                'pageName' => 'pendientes_page',
+                'query' => request()->except('pendientes_page'),
+            ]
+        );
 
         foreach ($pendientes as $value) {
             if (!$value->tipo) {
                 $value->concepto = 'Sin tipo';
                 continue;
             }
-            if ($value->deudor || $value->acreedor) {
-                switch ($value->tipo) {
-                case 'Ingreso Renta Arrendatario':
-                    $value->concepto = 'Cobrar Renta ' . ($value->deudor?->cliente?->nombre ?? 'Sin deudor');
-                    break;
-                case 'Ingreso Garantía Arrendatario':
-                    $value->concepto = 'Cobrar Garantía ' . ($value->deudor?->cliente?->nombre ?? 'Sin deudor');
-                    break;
-                case 'Comision inicial arrendador':
-                case 'Comision inicial arrendatario':
-                    $value->concepto = 'Cobrar Comisión inicial ' . ($value->deudor?->cliente?->nombre ?? 'Sin deudor');
-                    break;
-                case 'Egreso Renta Arrendador':
-                    $value->concepto = 'Transferir Renta ' . ($value->acreedor?->cliente?->nombre ?? 'Sin acreedor');
-                    break;
-                case 'Egreso Garantía Arrendador':
-                    $value->concepto = 'Transferir Garantía ' . ($value->acreedor?->cliente?->nombre ?? 'Sin acreedor');
-                    break;
-                default:
-                $value->concepto = $value->tipo;
-                break;
-                }   
+            $value->concepto = CobroConceptoFormatter::format($value->tipo, $value->fecha_cobro);
+        }
+
+        // Group cobros by propiedad → unidad → role for grouped card display
+        $propiedadesMap = [];
+        foreach ($pendientes as $cobro) {
+            $propiedadId = $cobro->Propiedad_id;
+            if (!$propiedadId && $cobro->contrato && $cobro->contrato->unidad && $cobro->contrato->unidad->propiedad) {
+                $propiedadId = $cobro->contrato->unidad->propiedad->id;
             }
-            else{
-                $value->concepto = $value->tipo;
+            $propKey = $propiedadId ?? 'sin_propiedad';
+
+            if (!isset($propiedadesMap[$propKey])) {
+                $direccion = $cobro->contrato?->unidad?->propiedad?->direccion ?? 'Sin propiedad';
+                if (!$direccion && $cobro->deudor?->cliente) {
+                    $direccion = $cobro->deudor?->cliente?->nombre ?? 'Sin dirección';
+                }
+                $propiedadesMap[$propKey] = [
+                    'id' => $propiedadId,
+                    'direccion' => $direccion,
+                    'unidad_map' => [],
+                ];
+            }
+
+            $unidadId = $cobro->Unidad_id ?? 'sin_unidad';
+            if (!isset($propiedadesMap[$propKey]['unidad_map'][$unidadId])) {
+                $propiedadesMap[$propKey]['unidad_map'][$unidadId] = [
+                    'id' => $unidadId === 'sin_unidad' ? null : $unidadId,
+                    'nombre' => $unidadId === 'sin_unidad' ? 'Sin unidad' : ($cobro->contrato?->unidad?->nombre ?? 'Sin unidad'),
+                    'arrendador' => [],
+                    'arrendatario' => [],
+                    'corredor' => [],
+                ];
+            }
+
+            // Build cobro data for Blade
+            $deudorPc = $cobro->participante_cobros->firstWhere('rol', 'Deudor');
+            $acreedorPc = $cobro->participante_cobros->firstWhere('rol', 'Acreedor');
+            $deudorId = $deudorPc?->Cliente_id;
+            $acreedorId = $acreedorPc?->Cliente_id;
+
+            $cobroData = [
+                'id' => $cobro->id,
+                'estado' => ucfirst($cobro->estado),
+                'tipo' => $cobro->tipo,
+                'monto' => $cobro->monto,
+                'deudor' => $deudorPc?->cliente?->nombre ?? 'Desconocido',
+                'deudor_id' => $deudorId,
+                'acreedor' => $acreedorPc?->cliente?->nombre ?? 'Desconocido',
+                'acreedor_id' => $acreedorId,
+                'servicio_id' => $cobro->Servicio_id,
+                'unidad_id' => $cobro->Unidad_id,
+                'unidad_nombre' => $cobro->contrato?->unidad?->nombre,
+                'fecha_cobro' => $cobro->fecha_cobro ? $cobro->fecha_cobro->toISOString() : null,
+                'concepto' => $cobro->concepto,
+            ];
+
+            // Bucket by role
+            $rolBucket = null;
+            if ($cobro->contrato) {
+                $participanteContrato = $cobro->contrato->participante_contratos
+                    ->firstWhere('Cliente_id', $deudorId);
+                if ($participanteContrato) {
+                    $rolBucket = strtolower($participanteContrato->rol);
+                }
+            }
+
+            if ($rolBucket === 'arrendador') {
+                $propiedadesMap[$propKey]['unidad_map'][$unidadId]['arrendador'][] = $cobroData;
+            } elseif ($rolBucket === 'arrendatario') {
+                $propiedadesMap[$propKey]['unidad_map'][$unidadId]['arrendatario'][] = $cobroData;
+            } elseif ($rolBucket === 'corredor') {
+                $propiedadesMap[$propKey]['unidad_map'][$unidadId]['corredor'][] = $cobroData;
+            } else {
+                $propiedadesMap[$propKey]['unidad_map'][$unidadId]['arrendador'][] = $cobroData;
+            }
+        }
+
+        // Build final grouped structure
+        $groupedPendientes = [];
+        foreach ($propiedadesMap as $propData) {
+            $unidades = array_values($propData['unidad_map']);
+            $unidadCount = count($unidades);
+
+            if ($unidadCount > 1) {
+                $arrendadorAll = [];
+                $arrendatarioAll = [];
+                $corredorAll = [];
+                foreach ($unidades as $unidad) {
+                    $arrendadorAll = array_merge($arrendadorAll, $unidad['arrendador']);
+                    $arrendatarioAll = array_merge($arrendatarioAll, $unidad['arrendatario']);
+                    $corredorAll = array_merge($corredorAll, $unidad['corredor']);
+                }
+                $groupedPendientes[] = [
+                    'id' => $propData['id'],
+                    'direccion' => $propData['direccion'],
+                    'unidad_count' => $unidadCount,
+                    'unidades' => [],
+                    'arrendador' => $arrendadorAll,
+                    'arrendatario' => $arrendatarioAll,
+                    'corredor' => $corredorAll,
+                ];
+            } else {
+                $unidadData = $unidades[0];
+                $groupedPendientes[] = [
+                    'id' => $propData['id'],
+                    'direccion' => $propData['direccion'],
+                    'unidad_count' => 1,
+                    'unidades' => [],
+                    'arrendador' => $unidadData['arrendador'],
+                    'arrendatario' => $unidadData['arrendatario'],
+                    'corredor' => $unidadData['corredor'],
+                ];
             }
         }
 
@@ -114,11 +238,11 @@ class FichaClienteController extends Controller
             ->latest('fecha')
             ->paginate(20, ['*'], 'transacciones_page');
 
-            /*
-|--------------------------------------------------------------------------
-| COUNT y OPTIONS
-|--------------------------------------------------------------------------
-*/
+        /*
+        |--------------------------------------------------------------------------
+        | COUNT y OPTIONS
+        |--------------------------------------------------------------------------
+        */
 
         $clienteCount = \App\Models\Cliente::count();
 
@@ -151,31 +275,25 @@ class FichaClienteController extends Controller
             : collect();
 
         $nacionalidadCount   = \App\Models\Nacionalidad::count();
-            $nacionalidadOptions = \App\Models\Nacionalidad::orderBy('nombre')->get(['id', 'nombre']);
+        $nacionalidadOptions = \App\Models\Nacionalidad::orderBy('nombre')->get(['id', 'nombre']);
 
-            $participanteCobroCount = ParticipanteCobro::count();
+        $participanteCobroCount = ParticipanteCobro::count();
 
-            $participanteCobroOptions = $participanteCobroCount <= config('generator.select_threshold', 15)
-                ? ParticipanteCobro::with('cliente')->get(['id', 'Cliente_id', 'Cobro_id', 'deudor_acreedor'])
-                : collect();
+        $participanteCobroOptions = $participanteCobroCount <= config('generator.select_threshold', 15)
+            ? ParticipanteCobro::with('cliente')->get(['id', 'Cliente_id', 'Cobro_id', 'deudor_acreedor'])
+            : collect();
 
-            /*
-            |--------------------------------------------------------------------------
-            | VIEW
-            |--------------------------------------------------------------------------
-            */
+        /*
+        |--------------------------------------------------------------------------
+        | TIPOS DE COBRO DISPONIBLES PARA ESTE CLIENTE
+        |--------------------------------------------------------------------------
+        */
+        $tiposCobroDisponibles = collect();
 
-            /*
-            |--------------------------------------------------------------------------
-            | TIPOS DE COBRO DISPONIBLES PARA ESTE CLIENTE
-            |--------------------------------------------------------------------------
-            */
-            $tiposCobroDisponibles = collect();
+        // Siempre disponibles
+        $tiposCobroDisponibles->push('Reparación', 'Extra', 'Devolución');
 
-            // Siempre disponibles
-            $tiposCobroDisponibles->push('Reparación', 'Extra', 'Devolución');
-
-            // Contratos vigentes query
+        // Contratos vigentes query
             $contratosVigentes = Contrato::query()
                 ->with([
                     'unidad.propiedad',
@@ -252,6 +370,8 @@ class FichaClienteController extends Controller
                 'unidadOptions',
                 'contratosVigentes',
                 'pendientes',
+                'pendientesPaginator',
+                'groupedPendientes',
                 'transacciones',
                 'participanteCobroCount',
                 'participanteCobroOptions',

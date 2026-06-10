@@ -11,9 +11,13 @@ use App\Models\Contrato;
 use App\Models\Servicio;
 use App\Models\Unidad;
 use App\Models\Cliente;
+use App\Services\CobroConceptoFormatter;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class FichaPropiedadController extends Controller
 {
+    private const PENDIENTES_UNIT_GROUPS_PER_PAGE = 3;
+
     /**
      * Shared base query for Cobro scoped to a propiedad.
      * Scopes via 3 OR conditions:
@@ -28,7 +32,9 @@ class FichaPropiedadController extends Controller
                 'deudor.cliente',
                 'acreedor.cliente',
                 'contrato.unidad.propiedad',
+                'contrato.participante_contratos',
                 'servicio',
+                'participante_cobros.cliente',
             ])
             ->where(function ($q) use ($id) {
                 $q->where('Propiedad_id', $id)
@@ -54,47 +60,109 @@ class FichaPropiedadController extends Controller
         $baseQuery = $this->baseQuery($id);
 
         // PENDIENTES
+        $estadosPendientes = [
+            'pendiente',
+            'vencido',
+            'incompleto',
+        ];
+        $pendientesPage = max(1, (int) request()->query('pendientes_page', 1));
+
+        $unidadIds = (clone $baseQuery)
+            ->whereIn('estado', $estadosPendientes)
+            ->whereNotNull('Unidad_id')
+            ->orderBy('Unidad_id')
+            ->distinct()
+            ->pluck('Unidad_id');
+
+        $totalPendienteGroups = $unidadIds->count();
+        $unidadIdsPaginated = $unidadIds->slice(
+            ($pendientesPage - 1) * self::PENDIENTES_UNIT_GROUPS_PER_PAGE,
+            self::PENDIENTES_UNIT_GROUPS_PER_PAGE
+        )->values();
+
         $pendientes = (clone $baseQuery)
-            ->whereIn('estado', [
-                'pendiente',
-                'vencido',
-                'incompleto',
-            ])
+            ->whereIn('estado', $estadosPendientes)
+            ->whereIn('Unidad_id', $unidadIdsPaginated)
+            ->orderBy('Unidad_id')
             ->latest('fecha_cobro')
-            ->paginate(10, ['*'], 'pendientes_page');
+            ->get();
+
+        $pendientesPaginator = new LengthAwarePaginator(
+            $unidadIdsPaginated,
+            $totalPendienteGroups,
+            self::PENDIENTES_UNIT_GROUPS_PER_PAGE,
+            $pendientesPage,
+            [
+                'path' => request()->url(),
+                'pageName' => 'pendientes_page',
+                'query' => request()->except('pendientes_page'),
+            ]
+        );
 
         foreach ($pendientes as $value) {
             if (!$value->tipo) {
                 $value->concepto = 'Sin tipo';
                 continue;
             }
-            if ($value->deudor || $value->acreedor) {
-                switch ($value->tipo) {
-                case 'Ingreso Renta Arrendatario':
-                    $value->concepto = 'Cobrar Renta ' . ($value->deudor?->cliente?->nombre ?? 'Sin deudor');
-                    break;
-                case 'Ingreso Garantía Arrendatario':
-                    $value->concepto = 'Cobrar Garantía ' . ($value->deudor?->cliente?->nombre ?? 'Sin deudor');
-                    break;
-                case 'Comision inicial arrendador':
-                case 'Comision inicial arrendatario':
-                    $value->concepto = 'Cobrar Comisión inicial ' . ($value->deudor?->cliente?->nombre ?? 'Sin deudor');
-                    break;
-                case 'Egreso Renta Arrendador':
-                    $value->concepto = 'Transferir Renta ' . ($value->acreedor?->cliente?->nombre ?? 'Sin acreedor');
-                    break;
-                case 'Egreso Garantía Arrendador':
-                    $value->concepto = 'Transferir Garantía ' . ($value->acreedor?->cliente?->nombre ?? 'Sin acreedor');
-                    break;
-                default:
-                    $value->concepto = $value->tipo;
-                    break;
+            $value->concepto = CobroConceptoFormatter::format($value->tipo, $value->fecha_cobro);
+        }
+
+        // Group cobros by unidad → role for grouped card display
+        $unidadesMap = [];
+        foreach ($pendientes as $cobro) {
+            $unidadId = $cobro->Unidad_id ?? 'sin_unidad';
+            if (!isset($unidadesMap[$unidadId])) {
+                $unidadesMap[$unidadId] = [
+                    'id' => $unidadId === 'sin_unidad' ? null : $unidadId,
+                    'nombre' => $unidadId === 'sin_unidad' ? 'Sin unidad' : ($cobro->contrato?->unidad?->nombre ?? 'Sin unidad'),
+                    'arrendador' => [],
+                    'arrendatario' => [],
+                    'corredor' => [],
+                ];
+            }
+
+            // Build cobro data for Blade
+            $deudorPc = $cobro->participante_cobros->firstWhere('rol', 'Deudor');
+            $acreedorPc = $cobro->participante_cobros->firstWhere('rol', 'Acreedor');
+            $deudorId = $deudorPc?->Cliente_id;
+
+            $cobroData = [
+                'id' => $cobro->id,
+                'estado' => ucfirst($cobro->estado),
+                'tipo' => $cobro->tipo,
+                'monto' => $cobro->monto,
+                'deudor' => $deudorPc?->cliente?->nombre ?? 'Desconocido',
+                'deudor_id' => $deudorId,
+                'acreedor' => $acreedorPc?->cliente?->nombre ?? 'Desconocido',
+                'acreedor_id' => $acreedorPc?->Cliente_id,
+                'servicio_id' => $cobro->Servicio_id,
+                'fecha_cobro' => $cobro->fecha_cobro ? $cobro->fecha_cobro->toISOString() : null,
+                'concepto' => $cobro->concepto,
+            ];
+
+            // Bucket by role
+            $rolBucket = null;
+            if ($cobro->contrato) {
+                $participanteContrato = $cobro->contrato->participante_contratos
+                    ->firstWhere('Cliente_id', $deudorId);
+                if ($participanteContrato) {
+                    $rolBucket = strtolower($participanteContrato->rol);
                 }
             }
-            else{
-                $value->concepto = $value->tipo;
+
+            if ($rolBucket === 'arrendador') {
+                $unidadesMap[$unidadId]['arrendador'][] = $cobroData;
+            } elseif ($rolBucket === 'arrendatario') {
+                $unidadesMap[$unidadId]['arrendatario'][] = $cobroData;
+            } elseif ($rolBucket === 'corredor') {
+                $unidadesMap[$unidadId]['corredor'][] = $cobroData;
+            } else {
+                $unidadesMap[$unidadId]['arrendador'][] = $cobroData;
             }
         }
+
+        $groupedPendientes = array_values($unidadesMap);
+        $showUnidadColumn = Unidad::where('Propiedad_id', $id)->count() > 1;
 
         /*
         |--------------------------------------------------------------------------
@@ -222,6 +290,9 @@ class FichaPropiedadController extends Controller
             'unidadOptions',
             'contratosVigentes',
             'pendientes',
+            'pendientesPaginator',
+            'groupedPendientes',
+            'showUnidadColumn',
             'transacciones',
             'tiposCobroDisponibles',
         ));

@@ -30,6 +30,150 @@
 
 @push('scripts')
 <script>
+    let paginaActual = 1;
+    const PROPIEDAD_ID = {{ $propiedad->id }};
+
+    const FICHA_POR_PAGINA = 3;
+
+    // ---- AJAX: fetch and refresh ----
+    async function cargarFichaPendientes(pagina = 1) {
+        const section = document.getElementById('pendientes-section');
+        if (section && typeof window.showElLoading === 'function') {
+            window.showElLoading(section);
+        }
+        try {
+            const res = await fetch(`/api/propiedad/${PROPIEDAD_ID}/pendientes?pagina=${pagina}&por_pagina=${FICHA_POR_PAGINA}`);
+            const json = await res.json();
+            paginaActual = json.pagina || pagina;
+            // Adjust pagination if current page is now empty
+            if (json.total_paginas > 0 && paginaActual > json.total_paginas) {
+                paginaActual = json.total_paginas;
+                return await cargarFichaPendientes(paginaActual);
+            }
+            renderFichaPendientes(json);
+        } catch (err) {
+            console.error('Error loading pendientes:', err);
+        } finally {
+            if (section && typeof window.hideElLoading === 'function') window.hideElLoading(section);
+        }
+    }
+
+    function cobroColor(estado) {
+        if (estado === 'Pendiente') return 'warning';
+        if (estado === 'Vencido') return 'danger';
+        if (estado === 'Incompleto') return 'info';
+        return 'secondary';
+    }
+
+    function serializeCobro(cobro) {
+        return escHtml(JSON.stringify(cobro)).replace(/'/g, '&#39;');
+    }
+
+    function renderCobros(lista = []) {
+        if (!lista.length) return '<span class="text-muted">—</span>';
+
+        return lista.map(c => {
+            const color = cobroColor(c.estado);
+            return `
+                <div class="mb-1">
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-${color} w-100 text-center btn-cobro"
+                        data-cobro='${serializeCobro(c)}'
+                    >
+                        ${escHtml(c.concepto || 'Sin tipo')}
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ---- Render: dashboard-like ficha table ----
+    function renderFichaPendientes(json) {
+        const section = document.getElementById('pendientes-section');
+        if (!section) return;
+
+        if (!json.data || json.data.length === 0) {
+            section.innerHTML = '<div class="alert alert-light border">No hay transacciones pendientes por el momento.</div>';
+            return;
+        }
+
+        const showUnidadColumn = Boolean(json.show_unidad);
+        const hayCol = {
+            arrendador: json.data.some(item => item.arrendador && item.arrendador.length > 0),
+            arrendatario: json.data.some(item => item.arrendatario && item.arrendatario.length > 0),
+            corredor: json.data.some(item => item.corredor && item.corredor.length > 0)
+        };
+
+        const columnCount = (showUnidadColumn ? 1 : 0) + Object.values(hayCol).filter(Boolean).length;
+
+        let html = `
+            <div class="card" id="ficha-pendientes-container">
+                <div class="table-responsive" id="ficha-pendientes-wrapper">
+                    <table class="table mb-0 text-nowrap table-hover table-card-mobile pendientes-dashboard-table ficha-pendientes-table">
+                        <thead class="table-light border-light">
+                            <tr>
+                                ${showUnidadColumn ? '<th><b>Unidad</b></th>' : ''}
+                                ${hayCol.arrendador ? '<th data-col="arrendador"><b>Cobros al Arrendador</b></th>' : ''}
+                                ${hayCol.arrendatario ? '<th data-col="arrendatario"><b>Cobros al Arrendatario</b></th>' : ''}
+                                ${hayCol.corredor ? '<th data-col="corredor"><b>Cobros al Corredor</b></th>' : ''}
+                            </tr>
+                        </thead>
+                        <tbody id="body-ficha-pendientes">
+        `;
+
+        json.data.forEach(unidad => {
+            html += `<tr>`;
+            if (showUnidadColumn) html += `<td>${escHtml(unidad.unidad_nombre || unidad.nombre || 'Sin unidad')}</td>`;
+            if (hayCol.arrendador) html += `<td class="td-cobros">${renderCobros(unidad.arrendador || [])}</td>`;
+            if (hayCol.arrendatario) html += `<td class="td-cobros">${renderCobros(unidad.arrendatario || [])}</td>`;
+            if (hayCol.corredor) html += `<td class="td-cobros">${renderCobros(unidad.corredor || [])}</td>`;
+            html += `</tr>`;
+        });
+
+        html += `</tbody>`;
+        if (json.total_paginas > 1) {
+            html += `<tfoot><tr><td colspan="${Math.max(1, columnCount)}" class="border-bottom-0">${renderFichaPaginacion(json.pagina, json.total_paginas)}</td></tr></tfoot>`;
+        }
+
+        html += `</table></div></div>`;
+
+        section.innerHTML = html;
+        labelFichaPendientesTable();
+    }
+
+    function labelFichaPendientesTable() {
+        const table = document.querySelector('.ficha-pendientes-table');
+        if (!table) return;
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            tr.querySelectorAll('td').forEach((td, i) => {
+                if (headers[i]) td.setAttribute('data-label', headers[i]);
+            });
+        });
+    }
+
+    // ---- Render: pagination ----
+    function renderFichaPaginacion(pagina, totalPaginas) {
+        let html = '<nav><ul class="pagination pagination-sm">';
+        for (let i = 1; i <= totalPaginas; i++) {
+            html += `<li class="page-item ${i === pagina ? 'active' : ''}"><a class="page-link" href="#" onclick="cargarFichaPendientes(${i}); return false;">${i}</a></li>`;
+        }
+        html += '</ul></nav>';
+        return html;
+    }
+
+    // ---- Escape HTML special chars ----
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // ---- Registrar pago via API ----
     async function registrarPago(cobro) {
         const btn = document.getElementById('btn-registrar');
         try {
@@ -62,17 +206,14 @@
                 const modalEl = document.getElementById('modalCobro');
                 const modal = bootstrap.Modal.getInstance(modalEl);
                 modal.hide();
-                location.reload();
-            }
-
-            if (btn) btn.disabled = false;
-            if (typeof window.hideElLoading === 'function') {
-                window.hideElLoading(btn);
+                // AJAX refresh instead of full reload
+                await cargarFichaPendientes(paginaActual);
             }
 
         } catch (err) {
             console.error(err);
             mostrarMensaje('Error', '\u274c Error de conexi\u00f3n', 'danger');
+        } finally {
             if (btn) btn.disabled = false;
             if (typeof window.hideElLoading === 'function') {
                 window.hideElLoading(btn);
@@ -80,6 +221,7 @@
         }
     }
 
+    // ---- Click handler for btn-cobro (opens modal) ----
     document.addEventListener('click', function (e) {
         if (!e.target.classList.contains('btn-cobro')) return;
 
@@ -113,6 +255,7 @@
         modal.show();
     });
 
+    // ---- Flash modal ----
     function mostrarMensaje(titulo, mensaje, tipo = 'success') {
         const modalHtml = `
             <div class="modal fade" id="modalMensaje" tabindex="-1">

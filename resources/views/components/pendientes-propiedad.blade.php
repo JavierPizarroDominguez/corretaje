@@ -7,89 +7,55 @@
         </button>
     </div>
 </div>
-<div class="row">
-    <div class="col-12">
-         @if($pendientes->count())
-        {{-- Desktop table (≥576px) --}}
-        <div class="table-responsive d-none d-sm-block">
-            <table class="table table-hover table-card-mobile ficha-pendientes-mobile">
-                <thead>
-                    <tr>
-                        <th>Concepto</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($pendientes as $cobro)
-                        <tr>
-                            <td>
-                                {{ $cobro->concepto }}
-                            </td>
-                            <td>
-            <button type="button" class="btn btn-primary btn-sm"
-            onclick="abrirModal({titulo: '{{ $cobro->concepto }}', vista: 'vista-revisar-cobro-{{ $cobro->id }}'})">
-                Revisar
-            </button>
+<div id="pendientes-section">
+    @php
+        $showUnidadColumn = $showUnidadColumn ?? false;
+        $hasArrendador = collect($groupedPendientes)->contains(fn ($unidad) => count($unidad['arrendador'] ?? []) > 0);
+        $hasArrendatario = collect($groupedPendientes)->contains(fn ($unidad) => count($unidad['arrendatario'] ?? []) > 0);
+        $hasCorredor = collect($groupedPendientes)->contains(fn ($unidad) => count($unidad['corredor'] ?? []) > 0);
+        $descriptorColumnCount = $showUnidadColumn ? 1 : 0;
+        $roleColumnCount = ($hasArrendador ? 1 : 0) + ($hasArrendatario ? 1 : 0) + ($hasCorredor ? 1 : 0);
+    @endphp
 
-            <div class="d-none">
-                <div id="vista-revisar-cobro-{{ $cobro->id }}">
-                    @include('cobro.modal.show', ['cobro' => $cobro])
-                </div>
+    @if(count($groupedPendientes))
+        <div class="card" id="ficha-pendientes-container">
+            <div class="table-responsive" id="ficha-pendientes-wrapper">
+                <table class="table mb-0 text-nowrap table-hover table-card-mobile pendientes-dashboard-table ficha-pendientes-table">
+                    <thead class="table-light border-light">
+                        <tr>
+                            @if($showUnidadColumn)<th><b>Unidad</b></th>@endif
+                            @if($hasArrendador)<th data-col="arrendador"><b>Cobros al Arrendador</b></th>@endif
+                            @if($hasArrendatario)<th data-col="arrendatario"><b>Cobros al Arrendatario</b></th>@endif
+                            @if($hasCorredor)<th data-col="corredor"><b>Cobros al Corredor</b></th>@endif
+                        </tr>
+                    </thead>
+                    <tbody id="body-ficha-pendientes">
+                        @foreach($groupedPendientes as $unidad)
+                            <tr>
+                                @if($showUnidadColumn)<td>{{ $unidad['nombre'] }}</td>@endif
+                                @if($hasArrendador)<td class="td-cobros">@include('components._pendientes-cobros-buttons', ['cobros' => $unidad['arrendador'] ?? []])</td>@endif
+                                @if($hasArrendatario)<td class="td-cobros">@include('components._pendientes-cobros-buttons', ['cobros' => $unidad['arrendatario'] ?? []])</td>@endif
+                                @if($hasCorredor)<td class="td-cobros">@include('components._pendientes-cobros-buttons', ['cobros' => $unidad['corredor'] ?? []])</td>@endif
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    @if(($pendientesPaginator ?? $pendientes)->hasPages())
+                        <tfoot>
+                            <tr>
+                                <td colspan="{{ max(1, $descriptorColumnCount + $roleColumnCount) }}" class="border-bottom-0">
+                                    {{ ($pendientesPaginator ?? $pendientes)->links() }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    @endif
+                </table>
             </div>
-        </td>
-    </tr>
-@endforeach
-                </tbody>
-            </table>
         </div>
-        {{-- Mobile cards (<576px): colored estado badges --}}
-        <div class="d-sm-none">
-            @foreach($pendientes as $cobro)
-                @php
-                    $deudor = $cobro->deudor->cliente ?? null;
-                    $acreedor = $cobro->acreedor->cliente ?? null;
-                    $estado = $cobro->estado ?? 'pendiente';
-                    $estadoLabel = ucfirst($estado);
-                    if ($estado === 'pendiente') {
-                        $colorClass = 'warning';
-                    } elseif ($estado === 'vencido') {
-                        $colorClass = 'danger';
-                    } else {
-                        $colorClass = 'info';
-                    }
-                    $cobroData = [
-                        'id' => $cobro->id,
-                        'concepto' => $cobro->concepto,
-                        'tipo' => $cobro->tipo,
-                        'estado' => $estadoLabel,
-                        'monto' => $cobro->monto,
-                        'fecha_cobro' => $cobro->fecha_cobro?->toISOString() ?? null,
-                        'deudor' => $deudor->nombre ?? 'N/A',
-                        'deudor_id' => $deudor->id ?? null,
-                        'acreedor' => $acreedor->nombre ?? 'N/A',
-                        'acreedor_id' => $acreedor->id ?? null,
-                        'servicio_id' => $cobro->servicio_id,
-                    ];
-                @endphp
-                <div class="mb-2">
-                    <button
-                        class="btn btn-sm btn-{{ $colorClass }} w-100 text-center btn-cobro"
-                        data-cobro='@json($cobroData)'
-                    >
-                        {{ $cobro->concepto }}
-                    </button>
-                </div>
-            @endforeach
+    @else
+        <div class="alert alert-light border">
+            No hay transacciones pendientes por el momento.
         </div>
-        <div class="mt-3">
-            {{ $pendientes->links() }}
-        </div>
-         @else
-            <div class="alert alert-light border">
-                No hay transacciones pendientes por el momento.
-            </div>
-         @endif
-    </div>
+    @endif
 </div>
 @php
     // CUSTOM: filter propiedades for this propiedad context

@@ -491,42 +491,51 @@
    ======================================== */
 /* Fix tfoot pagination display in card mode (overrides tbody td display:flex) */
 @media (max-width: 575.98px) {
-  .table-card-mobile#tabla-pendientes tfoot td {
+  .table-card-mobile#tabla-pendientes tfoot td,
+  .table-card-mobile.pendientes-dashboard-table tfoot td {
     display: table-cell !important;
     flex-direction: unset !important;
     justify-content: unset !important;
     align-items: unset !important;
     padding: 8px 4px;
   }
-  .table-card-mobile#tabla-pendientes tfoot td .pagination {
+  .table-card-mobile#tabla-pendientes tfoot td .pagination,
+  .table-card-mobile.pendientes-dashboard-table tfoot td .pagination {
     flex-wrap: wrap;
     justify-content: center;
   }
   /* Cells containing cobro buttons: stack vertically instead of flex row */
-  .table-card-mobile#tabla-pendientes tbody tr {
+  .table-card-mobile#tabla-pendientes tbody tr,
+  .table-card-mobile.pendientes-dashboard-table tbody tr {
     border: 2px solid #adb5bd;
     margin-bottom: 16px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   }
-  .table-card-mobile#tabla-pendientes tbody td {
+  .table-card-mobile#tabla-pendientes tbody td,
+  .table-card-mobile.pendientes-dashboard-table tbody td {
     justify-content: center;
     text-align: center;
   }
-  .table-card-mobile#tabla-pendientes tbody td:first-child {
+  .table-card-mobile#tabla-pendientes tbody td:first-child,
+  .table-card-mobile.pendientes-dashboard-table tbody td:first-child {
     font-weight: 600;
     font-size: 0.95rem;
   }
-  .table-card-mobile#tabla-pendientes tbody td.td-cobros {
+  .table-card-mobile#tabla-pendientes tbody td.td-cobros,
+  .table-card-mobile.pendientes-dashboard-table tbody td.td-cobros {
     display: block !important;
     text-align: center;
   }
-  .table-card-mobile#tabla-pendientes tbody td.td-cobros .mb-1 {
+  .table-card-mobile#tabla-pendientes tbody td.td-cobros .mb-1,
+  .table-card-mobile.pendientes-dashboard-table tbody td.td-cobros .mb-1 {
     margin-bottom: 0.5rem;
   }
-  .table-card-mobile#tabla-pendientes tbody td.td-cobros .mb-1:last-child {
+  .table-card-mobile#tabla-pendientes tbody td.td-cobros .mb-1:last-child,
+  .table-card-mobile.pendientes-dashboard-table tbody td.td-cobros .mb-1:last-child {
     margin-bottom: 0;
   }
-  .table-card-mobile#tabla-pendientes tbody td.td-cobros .btn-cobro {
+  .table-card-mobile#tabla-pendientes tbody td.td-cobros .btn-cobro,
+  .table-card-mobile.pendientes-dashboard-table tbody td.td-cobros .btn-cobro {
     font-size: 0.85rem;
     padding: 0.5rem 0.75rem;
     display: block;
@@ -550,24 +559,6 @@
   .content {
     padding-left: 1rem;
     padding-right: 1rem;
-  }
-}
-
-/* ========================================
-   FICHA PENDIENTES CARD OVERRIDES
-   Mobile card style matching dashboard patterns
-   ======================================== */
-@media (max-width: 575.98px) {
-  .table-card-mobile.ficha-pendientes-mobile tbody tr {
-    border: 2px solid #adb5bd;
-    margin-bottom: 16px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  }
-  .table-card-mobile.ficha-pendientes-mobile .btn-cobro {
-    font-size: 0.85rem;
-    padding: 0.5rem 0.75rem;
-    display: block;
-    width: 100%;
   }
 }
 

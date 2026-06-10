@@ -77,7 +77,7 @@ class DashboardPendientesControllerTest extends TestCase
         return ['propiedad' => $propiedad, 'cobros' => $createdCobros];
     }
 
-    public function test_only_pendiente_and_vencido_in_results(): void
+    public function test_includes_pendiente_vencido_and_incompleto(): void
     {
         $this->crearPropiedadConCobros('Dashboard Test 1', [
             ['tipo' => 'Ingreso Renta', 'monto' => 100000, 'estado' => 'Pendiente', 'deudor_rol' => 'Arrendatario', 'acreedor_rol' => 'Corredor'],
@@ -102,7 +102,7 @@ class DashboardPendientesControllerTest extends TestCase
         $this->assertContains('Vencido', $estados);
         $this->assertNotContains('Pagado', $estados);
         $this->assertNotContains('Anulado', $estados);
-        $this->assertNotContains('Incompleto', $estados);
+        $this->assertContains('Incompleto', $estados);
     }
 
     public function test_paginates_by_property(): void
@@ -129,13 +129,47 @@ class DashboardPendientesControllerTest extends TestCase
         $this->assertCount(1, $response2->json('data'));
     }
 
+    public function test_clamps_dashboard_pagination_to_three_property_groups_without_splitting_cobros(): void
+    {
+        $multiCobroProp = $this->crearPropiedadConCobros('Dashboard Group Clamp Multi', [
+            ['tipo' => 'Ingreso Renta', 'monto' => 100000, 'estado' => 'Pendiente', 'deudor_rol' => 'Arrendatario', 'acreedor_rol' => 'Corredor'],
+            ['tipo' => 'Egreso Renta', 'monto' => 200000, 'estado' => 'Vencido', 'deudor_rol' => 'Arrendador', 'acreedor_rol' => 'Corredor'],
+        ]);
+
+        for ($i = 1; $i <= 3; $i++) {
+            $this->crearPropiedadConCobros("Dashboard Group Clamp $i", [
+                ['tipo' => 'Ingreso Renta', 'monto' => 100000 * $i, 'estado' => 'Pendiente', 'deudor_rol' => 'Arrendatario', 'acreedor_rol' => 'Corredor'],
+            ]);
+        }
+
+        $response = $this->getJson('/api/dashboard/pendientes?pagina=1&por_pagina=99');
+
+        $response->assertStatus(200);
+        $json = $response->json();
+
+        $this->assertSame(3, $json['por_pagina']);
+        $this->assertCount(3, $json['data']);
+        $this->assertSame(4, $json['total']);
+        $this->assertSame(2, $json['total_paginas']);
+
+        $multiCobroRow = collect($json['data'])->firstWhere('id', $multiCobroProp['propiedad']->id);
+        $this->assertNotNull($multiCobroRow, 'The first page must include the first property group.');
+
+        $allCobros = array_merge($multiCobroRow['arrendador'], $multiCobroRow['arrendatario'], $multiCobroRow['corredor']);
+        $this->assertCount(2, $allCobros, 'All cobros for a visible property group must remain on that page.');
+        $this->assertEqualsCanonicalizing(
+            array_column($multiCobroProp['cobros'], 'id'),
+            array_column($allCobros, 'id')
+        );
+    }
+
     public function test_cobros_grouped_by_role_bucket(): void
     {
         // Deudor=arrendador → arrendador bucket
         // Deudor=arrendatario → arrendatario bucket
         // Deudor=corredor → corredor bucket
         $this->crearPropiedadConCobros('Bucket Test Prop', [
-            ['tipo' => 'Egreso Renta', 'monto' => 100000, 'estado' => 'Pendiente', 'deudor_rol' => 'Corredor', 'acreedor_rol' => 'Arrendador'],
+            ['tipo' => 'Egreso Renta', 'monto' => 100000, 'estado' => 'Pendiente', 'deudor_rol' => 'Arrendador', 'acreedor_rol' => 'Corredor'],
             ['tipo' => 'Ingreso Renta', 'monto' => 200000, 'estado' => 'Pendiente', 'deudor_rol' => 'Arrendatario', 'acreedor_rol' => 'Corredor'],
             ['tipo' => 'Comision inicial', 'monto' => 300000, 'estado' => 'Pendiente', 'deudor_rol' => 'Corredor', 'acreedor_rol' => 'Arrendador'],
         ]);

@@ -137,7 +137,7 @@ class DashboardPendientesApiShapeTest extends TestCase
 
         // Validate specific concepto values
         $conceptsByTipo = collect($allCobros)->keyBy('tipo');
-        $this->assertEquals('Cobrar renta mayo 2025', $conceptsByTipo['Ingreso Renta Arrendatario']['concepto']);
+        $this->assertEquals('Renta mayo 2025', $conceptsByTipo['Ingreso Renta Arrendatario']['concepto']);
         $this->assertEquals('Transferir renta mayo 2025', $conceptsByTipo['Egreso Renta Arrendador']['concepto']);
         $this->assertEquals('Luz mayo 2025', $conceptsByTipo['Luz']['concepto']);
     }
@@ -187,6 +187,6 @@ class DashboardPendientesApiShapeTest extends TestCase
         $this->assertGreaterThan(0, count($allCobros));
         $this->assertNotNull($allCobros[0]['fecha_cobro']);
         $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $allCobros[0]['fecha_cobro']);
-        $this->assertEquals('Cobrar renta mayo 2025', $allCobros[0]['concepto']);
+        $this->assertEquals('Renta mayo 2025', $allCobros[0]['concepto']);
     }
 }

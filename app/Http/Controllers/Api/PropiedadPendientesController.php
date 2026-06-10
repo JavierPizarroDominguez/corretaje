@@ -5,44 +5,64 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Cobro;
 use App\Models\Propiedad;
+use App\Models\Unidad;
 use App\Services\CobroConceptoFormatter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class DashboardPendientesController extends Controller
+class PropiedadPendientesController extends Controller
 {
-    private const MAX_PROPERTY_GROUPS_PER_PAGE = 3;
+    private const MAX_UNIT_GROUPS_PER_PAGE = 3;
 
-    public function index(Request $request)
+    /**
+     * GET /api/propiedad/{id}/pendientes
+     * Returns cobros grouped by unidad, then bucketed by role.
+     * Includes all three estados: Pendiente, Vencido, Incompleto.
+     */
+    public function index(Request $request, int $id)
     {
         $pagina = max(1, (int) $request->input('pagina', 1));
-        $porPagina = max(1, min(self::MAX_PROPERTY_GROUPS_PER_PAGE, (int) $request->input('por_pagina', self::MAX_PROPERTY_GROUPS_PER_PAGE)));
+        $porPagina = max(1, min(self::MAX_UNIT_GROUPS_PER_PAGE, (int) $request->input('por_pagina', self::MAX_UNIT_GROUPS_PER_PAGE)));
 
         $estadosPendientes = ['Pendiente', 'Vencido', 'Incompleto'];
+        $unidadCount = Unidad::where('Propiedad_id', $id)->count();
 
-        // Get distinct property IDs that have pending cobros
-        $propiedadIds = Cobro::whereIn('estado', $estadosPendientes)
-            ->whereNotNull('Propiedad_id')
-            ->orderBy('Propiedad_id')
+        // Get distinct unidad IDs that have pending cobros for this propiedad
+        // Scoped via: Propiedad_id direct OR contrato.unidad.propiedad_id OR servicio.propiedad_id
+        $unidadIds = Cobro::query()
+            ->where(function ($q) use ($id) {
+                $q->where('Propiedad_id', $id)
+                    ->orWhereHas('contrato.unidad', fn($q2) => $q2->where('Propiedad_id', $id))
+                    ->orWhereHas('servicio', fn($q2) => $q2->where('Propiedad_id', $id));
+            })
+            ->whereIn('estado', $estadosPendientes)
+            ->whereNotNull('Unidad_id')
+            ->orderBy('Unidad_id')
             ->distinct()
-            ->pluck('Propiedad_id');
+            ->pluck('Unidad_id');
 
-        $total = $propiedadIds->count();
+        $total = $unidadIds->count();
         $totalPaginas = max(1, (int) ceil($total / $porPagina));
         $pagina = min($pagina, $totalPaginas);
 
-        $propiedadIdsPaginated = $propiedadIds->slice(($pagina - 1) * $porPagina, $porPagina);
+        $unidadIdsPaginated = $unidadIds->slice(($pagina - 1) * $porPagina, $porPagina);
 
         $result = [];
 
-        foreach ($propiedadIdsPaginated as $propiedadId) {
-            $propiedad = Propiedad::find($propiedadId);
-            if (! $propiedad) {
+        foreach ($unidadIdsPaginated as $unidadId) {
+            $unidad = Unidad::find($unidadId);
+            if (! $unidad) {
                 continue;
             }
 
-            // Get all pending cobros for this property with eager loading
-            $cobros = Cobro::where('Propiedad_id', $propiedadId)
+            // Get all pending cobros for this unidad (scoped to this propiedad)
+            $cobros = Cobro::query()
+                ->where(function ($q) use ($id, $unidadId) {
+                    $q->where('Propiedad_id', $id)
+                        ->orWhereHas('contrato.unidad', fn($q2) => $q2->where('Propiedad_id', $id))
+                        ->orWhereHas('servicio', fn($q2) => $q2->where('Propiedad_id', $id));
+                })
+                ->where('Unidad_id', $unidadId)
                 ->whereIn('estado', $estadosPendientes)
                 ->with(['participante_cobros.cliente', 'contrato.participante_contratos'])
                 ->get();
@@ -97,8 +117,10 @@ class DashboardPendientesController extends Controller
             }
 
             $result[] = [
-                'id' => $propiedad->id,
-                'direccion' => $propiedad->direccion,
+                'id' => $unidad->id,
+                'direccion' => $unidad->nombre,
+                'unidad_id' => $unidad->id,
+                'unidad_nombre' => $unidad->nombre,
                 'arrendador' => $arrendadorCobros,
                 'arrendatario' => $arrendatarioCobros,
                 'corredor' => $corredorCobros,
@@ -106,6 +128,8 @@ class DashboardPendientesController extends Controller
         }
 
         return response()->json([
+            'show_unidad' => $unidadCount > 1,
+            'unidad_count' => $unidadCount,
             'data' => $result,
             'total' => $total,
             'pagina' => $pagina,

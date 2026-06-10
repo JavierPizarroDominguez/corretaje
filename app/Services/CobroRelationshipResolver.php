@@ -130,6 +130,7 @@ class CobroRelationshipResolver
                         'acreedor_nombre' => null,
                         'has_contract' => false,
                         'multiple' => false,
+                        'participants' => [],
                     ],
                     'options' => [],
                 ];
@@ -237,6 +238,7 @@ class CobroRelationshipResolver
                 'acreedor_nombre' => $acreedorNombre,
                 'has_contract' => true,
                 'multiple' => false,
+                'participants' => $this->extractParticipantsFromContracts(collect([$contrato])),
             ],
             'options' => [],
         ];
@@ -272,6 +274,7 @@ class CobroRelationshipResolver
                 'acreedor_nombre' => null,
                 'has_contract' => true,
                 'multiple' => true,
+                'participants' => $this->extractParticipantsFromContracts($contratos),
             ],
             'options' => $options,
         ];
@@ -290,6 +293,33 @@ class CobroRelationshipResolver
             ->firstWhere('rol', $rol);
 
         return $participante?->Cliente_id;
+    }
+
+    /**
+     * Extract unique contract participants from a collection of contracts.
+     * Returns array of {id, nombre, rol} deduplicated by Cliente_id.
+     */
+    protected function extractParticipantsFromContracts($contratos): array
+    {
+        $seen = [];
+        $participants = [];
+
+        foreach ($contratos as $contrato) {
+            foreach ($contrato->participante_contratos as $pc) {
+                $clienteId = $pc->Cliente_id;
+                if (isset($seen[$clienteId])) {
+                    continue;
+                }
+                $seen[$clienteId] = true;
+                $participants[] = [
+                    'id' => $clienteId,
+                    'nombre' => $pc->cliente?->nombre ?? 'Desconocido',
+                    'rol' => $pc->rol ?? '',
+                ];
+            }
+        }
+
+        return $participants;
     }
 
     /**

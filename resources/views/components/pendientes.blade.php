@@ -72,6 +72,14 @@
     <div id="vista-agregar-cobro">
         {{-- CUSTOM: hidden input for cliente_id — populated by abrirModal via cliente_id param --}}
         <input type="hidden" id="modal-cliente-id" value="{{ $cliente->id }}">
-        @include('cobro.modal.create', ['cliente' => $cliente, 'propiedadOptions' => $propiedadesCliente, 'propiedadCount' => $propiedadesCliente->count(), 'clienteOptions' => $clienteOptions, 'tiposCobroDisponibles' => $tiposCobroDisponibles])
+        @include('cobro.modal.create', [
+            'cliente' => $cliente,
+            'propiedadOptions' => $propiedadesCliente,
+            'propiedadCount' => $propiedadesCliente->count(),
+            'clienteOptions' => $clienteOptions,
+            'tiposCobroDisponibles' => $tiposCobroDisponibles,
+            'fichaContext' => true,
+            'participantOptions' => $participantOptions ?? collect(),
+        ])
     </div>
 </div>

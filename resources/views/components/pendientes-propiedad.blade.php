@@ -67,6 +67,12 @@
         {{-- CUSTOM: hidden inputs for propiedad_id and cliente_id (propietario) — read by JS IIFEs in create modal --}}
         <input type="hidden" id="modal-propiedad-id" value="{{ $propiedad->id }}">
         <input type="hidden" id="modal-cliente-id" value="{{ $propiedad->cliente->id ?? '' }}">
-        @include('cobro.modal.create', ['propiedadOptions' => $propiedadesPropiedad, 'propiedadCount' => $propiedadesPropiedad->count(), 'tiposCobroDisponibles' => $tiposCobroDisponibles])
+        @include('cobro.modal.create', [
+            'propiedadOptions' => $propiedadesPropiedad,
+            'propiedadCount' => $propiedadesPropiedad->count(),
+            'tiposCobroDisponibles' => $tiposCobroDisponibles,
+            'fichaContext' => true,
+            'participantOptions' => $participantOptions ?? collect(),
+        ])
     </div>
 </div>

@@ -299,6 +299,7 @@ class FichaClienteController extends Controller
                     'unidad.propiedad',
                     'arrendador',
                     'arrendatario',
+                    'participante_contratos.cliente',
                 ])
                 ->whereHas('participante_contratos', function ($q) use ($id) {
                     $q->where('Cliente_id', $id);
@@ -309,6 +310,17 @@ class FichaClienteController extends Controller
                 })
                 ->orderBy('fecha_inicio', 'desc')
                 ->get();
+
+            // CUSTOM: derive participant options from active contracts for ficha cobro modal
+            $participantOptions = collect();
+            foreach ($contratosVigentes as $contrato) {
+                foreach ($contrato->participante_contratos as $pc) {
+                    if ($pc->cliente) {
+                        $participantOptions->push($pc->cliente);
+                    }
+                }
+            }
+            $participantOptions = $participantOptions->unique('id')->sortBy('nombre')->values();
 
             // Si tiene contratos vigentes: renta, comisiones, garantías, aseo
             $tieneContratosVigentes = $contratosVigentes->isNotEmpty();
@@ -376,6 +388,7 @@ class FichaClienteController extends Controller
                 'participanteCobroCount',
                 'participanteCobroOptions',
                 'tiposCobroDisponibles',
+                'participantOptions',
             ));
     }
 

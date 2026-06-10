@@ -53,6 +53,14 @@ class CobroController extends Controller
 
     public function store(Request $request)
     {
+        // CUSTOM: ficha-context defaults and enforcement
+        if ($request->has('_ficha_context')) {
+            $request->merge([
+                'fecha_cobro' => $request->input('fecha_cobro', now()),
+                'estado' => $request->input('estado', 'Pendiente'),
+            ]);
+        }
+
         $data = $request->validate([
             // CUSTOM validation rule for auto_resolve_participantes (utility tipos: Luz, Agua, Gas, Gastos comunes)
             'cliente_id' => 'nullable|integer|exists:cliente,id',
@@ -75,7 +83,20 @@ class CobroController extends Controller
             'nombre-acreedor' => 'sometimes|nullable|string',
             'acreedor_Cliente_id' => 'required_with:nombre-acreedor|integer|exists:cliente,id',
             // [GEN:END:validation_rules]
+            // CUSTOM: ficha context enforcement
+            '_ficha_context' => 'sometimes|in:1',
         ]);
+
+        // CUSTOM: ficha context — enforce required monto, detalle, deudor, acreedor
+        if ($request->has('_ficha_context')) {
+            $fichaData = $request->validate([
+                'monto' => 'required|integer',
+                'detalle' => 'required|string',
+                'deudor_Cliente_id' => 'required|integer|exists:cliente,id',
+                'acreedor_Cliente_id' => 'required|integer|exists:cliente,id',
+            ]);
+            $data = array_merge($data, $fichaData);
+        }
 
         try {
             $cobro = new Cobro();

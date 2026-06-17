@@ -10,6 +10,100 @@
         </div>
     </div>
 
+    @php
+        $participantes = $contrato->participante_contratos ?? collect();
+        $unidad = $contrato->unidad;
+        $propiedad = $unidad?->propiedad;
+        $formatDate = fn ($date) => $date ? $date->format('d-m-Y') : null;
+        $formatMoney = fn ($amount) => '$' . number_format((int) ($amount ?? 0), 0, ',', '.');
+    @endphp
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Resumen legible del contrato</h3>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h4 class="h6 text-uppercase text-muted">Participantes del contrato</h4>
+                    <dl class="mb-0">
+                        @foreach(['Arrendador', 'Arrendatario', 'Corredor'] as $rol)
+                            @php
+                                $participante = $participantes->firstWhere('rol', $rol);
+                                $cliente = $participante?->cliente;
+                            @endphp
+                            <dt>{{ $rol }}</dt>
+                            <dd>
+                                @if($cliente)
+                                    <a href="{{ route('fichacliente.show', $cliente->id) }}">{{ $cliente->nombre }}</a>
+                                @else
+                                    <span class="text-muted fst-italic">Sin {{ strtolower($rol) }}</span>
+                                @endif
+                            </dd>
+                        @endforeach
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <h4 class="h6 text-uppercase text-muted">Propiedad y unidad</h4>
+                    <dl class="mb-0">
+                        <dt>Propiedad</dt>
+                        <dd>{{ $propiedad?->direccion ?? 'Sin propiedad asociada' }}</dd>
+                        <dt>Unidad</dt>
+                        <dd>{{ $unidad?->nombre ?? 'Sin unidad asociada' }}</dd>
+                        <dt>Fecha de inicio</dt>
+                        <dd>{{ $formatDate($contrato->fecha_inicio) ?? 'Sin fecha de inicio' }}</dd>
+                        <dt>Fecha de término</dt>
+                        <dd>{{ $formatDate($contrato->fecha_termino) ?? 'Sin fecha de término' }}</dd>
+                        <dt>Garantía</dt>
+                        <dd>{{ $formatMoney($contrato->garantia) }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Cobros del contrato</h3>
+        </div>
+        <div class="card-body p-0">
+            @if($contrato->cobros->isNotEmpty())
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th class="text-end">Monto</th>
+                                <th>Participantes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($contrato->cobros as $cobro)
+                                <tr>
+                                    <td>{{ $cobro->tipo }}</td>
+                                    <td>{{ $cobro->estado }}</td>
+                                    <td>{{ $formatDate($cobro->fecha_cobro) ?? 'Sin fecha' }}</td>
+                                    <td class="text-end">{{ $formatMoney($cobro->monto) }}</td>
+                                    <td>
+                                        @forelse($cobro->participante_cobros as $participanteCobro)
+                                            <span>{{ $participanteCobro->rol }}: {{ $participanteCobro->cliente?->nombre ?? 'Sin cliente' }}</span>@if(!$loop->last), @endif
+                                        @empty
+                                            <span class="text-muted fst-italic">Sin participantes asociados</span>
+                                        @endforelse
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="text-muted mb-0 p-3">No hay cobros asociados a este contrato.</p>
+            @endif
+        </div>
+    </div>
+
     {{-- [GEN:START:component_table] --}}
     <table class="table table-bordered">
     {{-- [GEN:START:field_unidad] @gen:editable @gen:type:relation-fk @gen:related:Unidad --}}

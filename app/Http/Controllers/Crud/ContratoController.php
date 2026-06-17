@@ -125,7 +125,14 @@ class ContratoController extends Controller
 
     public function show($id)
     {
-        $contrato = Contrato::findOrFail($id);
+        $contrato = Contrato::with([
+            'unidad.propiedad',
+            'participante_contratos.cliente',
+            'arrendador.cliente',
+            'arrendatario.cliente',
+            'corredor.cliente',
+            'cobros.participante_cobros.cliente',
+        ])->findOrFail($id);
 
         // [GEN:START:fk_data]
         $unidadCount   = \App\Models\Unidad::count();

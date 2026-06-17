@@ -17,6 +17,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class FichaPropiedadController extends Controller
 {
     private const PENDIENTES_UNIT_GROUPS_PER_PAGE = 3;
+    private const ESTADOS_PENDIENTES = ['pendiente', 'vencido', 'incompleto', 'Pendiente', 'Vencido', 'Incompleto'];
 
     /**
      * Shared base query for Cobro scoped to a propiedad.
@@ -60,11 +61,7 @@ class FichaPropiedadController extends Controller
         $baseQuery = $this->baseQuery($id);
 
         // PENDIENTES
-        $estadosPendientes = [
-            'pendiente',
-            'vencido',
-            'incompleto',
-        ];
+        $estadosPendientes = self::ESTADOS_PENDIENTES;
         $pendientesPage = max(1, (int) request()->query('pendientes_page', 1));
 
         $unidadIds = (clone $baseQuery)
@@ -237,9 +234,15 @@ class FichaPropiedadController extends Controller
         $contratosVigentes = Contrato::query()
             ->with([
                 'unidad.propiedad',
-                'arrendador',
-                'arrendatario',
+                'arrendador.cliente',
+                'arrendatario.cliente',
+                'corredor.cliente',
                 'participante_contratos.cliente',
+                'cobros' => function ($q) {
+                    $q->whereIn('estado', self::ESTADOS_PENDIENTES)
+                        ->with('participante_cobros.cliente')
+                        ->orderBy('fecha_cobro');
+                },
             ])
             ->whereHas('unidad', function ($q) use ($id) {
                 $q->where('Propiedad_id', $id);
@@ -405,8 +408,15 @@ class FichaPropiedadController extends Controller
         $contratosVigentes = Contrato::query()
             ->with([
                 'unidad.propiedad',
-                'arrendador',
-                'arrendatario',
+                'arrendador.cliente',
+                'arrendatario.cliente',
+                'corredor.cliente',
+                'participante_contratos.cliente',
+                'cobros' => function ($q) {
+                    $q->whereIn('estado', self::ESTADOS_PENDIENTES)
+                        ->with('participante_cobros.cliente')
+                        ->orderBy('fecha_cobro');
+                },
             ])
             ->whereHas('unidad', function ($q) use ($id) {
                 $q->where('Propiedad_id', $id);

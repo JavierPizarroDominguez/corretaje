@@ -37,7 +37,7 @@ Chain strategy: pending
 - [x] 2.1 Update `tests/Feature/FichaContratosDisplayTest.php` to assert ficha/index-style pending table classes, role headers, centered `.btn-cobro`, and clear empty state.
 - [x] 2.2 Add assertions that Terminar Contrato exposes `Agregar descuento`, includes `Extra`, and never renders `Agregar cobro`.
 - [x] 2.3 Add assertions for calculation selectors: pending rows lack `.terminacion-row`/`data-sign`; discount rows use `.terminacion-ajuste .terminacion-amount`.
-- [x] 2.4 Add assertions for exact full-guarantee confirmation text and absence of `alert(`, `confirm(`, and `prompt(` in the termination component.
+- [x] 2.4 Add assertions for full-guarantee inline warning text and absence of `alert(`, `confirm(`, and `prompt(` in the termination component.
 
 ## Phase 3: Pending Cobro Rendering
 
@@ -49,7 +49,7 @@ Chain strategy: pending
 
 - [x] 4.1 In `resources/views/components/contratos.blade.php`, add `Extra` to discount concept options while keeping `Agregar descuento` as the only row-creation action.
 - [x] 4.2 Refactor termination JS totals so `Total descuentos` sums only `.terminacion-ajuste .terminacion-amount` and refund equals garantía minus discounts.
-- [x] 4.3 Replace final-discount removal with a Bootstrap/custom confirmation modal using the required Spanish text; do not use native dialogs.
+- [x] 4.3 Replace final-discount confirmation with an inline Bootstrap warning using the required Spanish text; do not use native dialogs.
 
 ## Phase 5: Payment Modal Integration
 
@@ -61,4 +61,4 @@ Chain strategy: pending
 
 - [x] 6.1 Run `./vendor/bin/phpunit --filter FichaContratosDisplayTest`; fix failures without broad refactors.
 - [x] 6.2 Run `./vendor/bin/phpunit` for regression coverage; never run destructive migrations.
-- [ ] 6.3 Manually verify desktop/mobile Terminar Contrato: pending payment modal, spinner/modal feedback, no `Agregar cobro`, zero-discount confirmation, and stacked-modal cleanup.
+- [ ] 6.3 Manually verify desktop/mobile Terminar Contrato: pending payment modal, spinner/modal feedback, no `Agregar cobro`, zero-discount inline warning, add-discount recovery after removing all rows, and stacked-modal cleanup.

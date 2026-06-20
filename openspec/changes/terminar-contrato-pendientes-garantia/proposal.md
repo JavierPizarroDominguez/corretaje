@@ -10,7 +10,7 @@ Make `Terminar contrato` use the same pending-payment experience as fichas/index
 - Replace the current simple pending-cobros table in `components.contratos` with the ficha/index responsive pending-payment contract, including desktop/mobile behavior and cobro detail/payment modal.
 - Keep only the existing `Agregar descuento` action for guarantee concepts; add `Extra` as a concept option.
 - Calculate `Total descuentos` as the sum of added discount concepts only, and `Monto a devolver al arrendatario = garantía - total descuentos`.
-- Allow removing every discount concept and show a custom Bootstrap confirmation with: `¡Atención! se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?`
+- Allow removing every discount concept without confirmation and show an inline Bootstrap warning near the discounts section with: `¡Atención! se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?`
 - Preserve app conventions: no native `alert`/`confirm`/`prompt`; use existing loading/modal feedback patterns for any fetch.
 
 ### Out of Scope
@@ -22,7 +22,7 @@ Make `Terminar contrato` use the same pending-payment experience as fichas/index
 ## Capabilities
 
 ### New Capabilities
-- `contract-termination-guarantee`: Covers termination modal pending-cobro display, discount concepts, zero-discount confirmation, and guarantee refund calculation.
+- `contract-termination-guarantee`: Covers termination modal pending-cobro display, discount concepts, zero-discount inline warning, and guarantee refund calculation.
 
 ### Modified Capabilities
 - `ficha-pendientes-mobile`: Reuse/mirror the existing responsive pending-payment table/button contract in the contract termination modal.
@@ -36,7 +36,7 @@ Use the exploration recommendation: map each contract cobro to the ficha/index p
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `resources/views/components/contratos.blade.php` | Modified | Termination modal UI, cobro grouping/rendering, concept rows, calculations, remove-all confirmation. |
+| `resources/views/components/contratos.blade.php` | Modified | Termination modal UI, cobro grouping/rendering, concept rows, calculations, and remove-all inline warning. |
 | `resources/views/cliente/contratos.blade.php` | Modified | Include/support cobro detail/payment modal if needed. |
 | `resources/views/propiedad/contratos.blade.php` | Modified | Include/support cobro detail/payment modal if needed. |
 | `tests/Feature/FichaContratosDisplayTest.php` | Modified | Update assertions for new termination-modal contract. |
@@ -62,5 +62,5 @@ Revert the Blade/JS changes in affected contract views/components and restore pr
 - [ ] Termination modal shows pending cobros with ficha/index desktop and mobile behavior.
 - [ ] Pending cobros can open detail/payment modal; no `Agregar cobro` action appears.
 - [ ] Concepts include `Aseo final`, `Reparación`, and `Extra`; only `Agregar descuento` adds rows.
-- [ ] Removing all concepts uses the required custom confirmation and refunds full guarantee when accepted.
+- [ ] Removing all concepts shows the required inline warning and refunds the full guarantee without confirmation.
 - [ ] `Total descuentos` equals concept sum; refund equals guarantee minus discounts.

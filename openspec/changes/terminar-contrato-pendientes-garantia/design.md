@@ -13,7 +13,7 @@ First restore the baseline contract-card heading rule in `resources/views/compon
 | Map cobros in Blade using existing eager-loaded relations and `CobroConceptoFormatter` | Add a new API endpoint or controller DTO | Contract pages already render server-side and controllers load pending cobros; no new fetch is needed. |
 | Include one contracts-page `#modalCobro` plus idempotent delegated JS in `components.contratos` | Add `Agregar cobro`; link to CRUD show modal | User explicitly forbids `Agregar cobro`; payment must reuse the existing `.btn-cobro` detail/payment model. |
 | Re-label cloned mobile tables after `abrirModal()` | Depend only on `app.js` DOMContentLoaded observer | `abrirModal()` clones hidden content after initial labeling; cloned tables need labels applied safely. |
-| Use Bootstrap/custom confirmation for zero discounts | Native `confirm()` | Project convention forbids native dialogs and requires modal feedback. |
+| Use an inline Bootstrap warning for zero discounts | Custom confirmation modal; native `confirm()` | The changed requirement removes confirmation entirely while preserving the no-native-dialog convention and the business warning text. |
 
 ## Data Flow
 
@@ -36,10 +36,10 @@ Discount rows only
 
 | File | Action | Description |
 |---|---|---|
-| `resources/views/components/contratos.blade.php` | Modify | Build pending cobro role groups, render ficha/index table classes, add `Extra`, separate calculation selectors, zero-discount confirmation, cloned-table relabeling, and contracts `#modalCobro` behavior. |
+| `resources/views/components/contratos.blade.php` | Modify | Build pending cobro role groups, render ficha/index table classes, add `Extra`, separate calculation selectors, zero-discount inline warning, cloned-table relabeling, and contracts `#modalCobro` behavior. |
 | `resources/views/cliente/contratos.blade.php` | Review/possible no-op | Already includes `components.contratos`; no separate `Agregar cobro` surface should be added. |
 | `resources/views/propiedad/contratos.blade.php` | Review/possible no-op | Same as cliente page. |
-| `tests/Feature/FichaContratosDisplayTest.php` | Modify | Replace stale assertions with pending-table/payment button, `Extra`, confirmation text, no native dialogs, and math selector contract. |
+| `tests/Feature/FichaContratosDisplayTest.php` | Modify | Replace stale assertions with pending-table/payment button, `Extra`, inline warning text, no native dialogs, and math selector contract. |
 
 Baseline heading contract: before termination-modal work, update tests and component logic so a property with one unidad renders the property only, and a property with multiple unidades renders unidad + property.
 
@@ -73,9 +73,9 @@ The cloned modal content should call a local `labelTerminacionTables(preview)` f
 
 | Layer | What to Test | Approach |
 |---|---|---|
-| Feature | Contract termination markup | PHPUnit: pending table classes, role headers, `.btn-cobro data-cobro`, `Extra`, no `Agregar cobro`, confirmation text, no `alert/confirm/prompt`. |
+| Feature | Contract termination markup | PHPUnit: pending table classes, role headers, `.btn-cobro data-cobro`, `Extra`, no `Agregar cobro`, inline warning text, no `alert/confirm/prompt`. |
 | Feature | Contract card heading baseline | PHPUnit: single-unit property hides unidad in the card heading; multi-unit property shows unidad + property. |
-| JS contract/manual | Calculations and row removal | Manual/browser: add/remove all discounts, accept/cancel confirmation, verify `Total descuentos` ignores pending cobros and refund equals guarantee minus discounts. |
+| JS contract/manual | Calculations and row removal | Manual/browser: add/remove all discounts without confirmation, verify inline warning appears when no discounts remain, verify `Total descuentos` ignores pending cobros and refund equals guarantee minus discounts. |
 | Integration/manual | Payment and stacked modals | Open Terminar Contrato, open cobro detail, register payment, verify loading spinner on button, Bootstrap feedback, modal close behavior, and mobile labels. |
 
 ## Migration / Rollout

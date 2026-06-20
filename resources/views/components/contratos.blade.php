@@ -200,7 +200,7 @@
                     <h6>Descuentos a la devolución de garantía</h6>
                     <p>Puedes agregar descuentos a la devolución de garantía, como cargos por aseo o reparaciones. Selecciona el concepto, agrega un detalle y el monto correspondiente. El sistema calculará automáticamente el total a devolver al arrendatario.</p>
                     <div class="table-responsive">
-                        <table class="table table-sm table-bordered align-middle mb-2">
+                        <table class="table table-sm table-bordered align-middle mb-2 table-card-mobile pendientes-dashboard-table ficha-pendientes-table terminacion-ajustes-table">
                             <thead>
                                 <tr>
                                     <th>Concepto</th>
@@ -218,7 +218,7 @@
                                             <option value="charge">Extra</option>
                                         </select>
                                     </td>
-                                    <td><input type="text" class="form-control form-control-sm terminacion-description"></td>
+                                    <td><input type="text" class="form-control form-control-sm terminacion-description" placeholder="Detalle"></td>
                                     <td><input type="text" class="form-control form-control-sm terminacion-amount" value="$0"></td>
                                     <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger terminacion-remove">Quitar</button></td>
                                 </tr>
@@ -227,6 +227,11 @@
                     </div>
 
                     <button type="button" class="btn btn-sm btn-outline-primary terminacion-add">Agregar descuento</button>
+
+                    <div class="border border-warning rounded bg-warning-subtle text-warning-emphasis p-3 mt-3 d-none" role="status" data-terminacion-full-refund-warning="true">
+                        <strong>¡Atención!</strong>
+                        se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?
+                    </div>
 
                     <div class="row g-3 mt-3">
                         <div class="col-md-4">
@@ -276,31 +281,11 @@
             </div>
         </div>
     </div>
-
-    <div class="modal fade" id="terminacionFullRefundModal" tabindex="-1" data-terminacion-stacked-modal="true" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="modal-title">Confirmar devolución completa</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    ¡Atención! se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-warning" id="terminacionFullRefundAccept">Sí, devolver garantía completa</button>
-                </div>
-            </div>
-        </div>
-    </div>
 @endonce
 
 @once
     <script>
         (function () {
-            var pendingRemoval = null;
-
             function parseCLP(value) {
                 if (window.stripCLP) return parseInt(window.stripCLP(value), 10) || 0;
                 return parseInt(String(value || '').replace(/\D/g, ''), 10) || 0;
@@ -314,8 +299,10 @@
             function recalculate(preview) {
                 var garantia = parseInt(preview.dataset.garantia || '0', 10) || 0;
                 var discounts = 0;
+                var warning = preview.querySelector('[data-terminacion-full-refund-warning="true"]');
+                var adjustmentRows = preview.querySelectorAll('.terminacion-ajuste');
 
-                preview.querySelectorAll('.terminacion-ajuste').forEach(function (row) {
+                adjustmentRows.forEach(function (row) {
                     var input = row.querySelector('.terminacion-amount');
                     var amount = input ? parseCLP(input.value) : 0;
 
@@ -325,22 +312,43 @@
 
                 preview.querySelector('.terminacion-neto').textContent = formatCLP(discounts);
                 preview.querySelector('.terminacion-total').textContent = formatCLP(garantia - discounts);
+                if (warning) warning.classList.toggle('d-none', adjustmentRows.length > 0);
+            }
+
+            function createAdjustmentRow() {
+                var row = document.createElement('tr');
+                row.className = 'terminacion-row terminacion-ajuste';
+                row.dataset.sign = 'charge';
+                row.dataset.amount = '0';
+                row.innerHTML = '<td><select class="form-select form-select-sm terminacion-sign">'
+                    + '<option value="charge" selected>Aseo final</option>'
+                    + '<option value="charge">Reparación</option>'
+                    + '<option value="charge">Extra</option>'
+                    + '</select></td>'
+                    + '<td><input type="text" class="form-control form-control-sm terminacion-description" placeholder="Detalle"></td>'
+                    + '<td><input type="text" class="form-control form-control-sm terminacion-amount" value="$0"></td>'
+                    + '<td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger terminacion-remove">Quitar</button></td>';
+
+                return row;
             }
 
             function addAdjustment(preview) {
                 var tbody = preview.querySelector('.terminacion-ajustes');
-                var row = tbody.querySelector('.terminacion-ajuste').cloneNode(true);
+                var sourceRow = tbody.querySelector('.terminacion-ajuste');
+                var row = sourceRow ? sourceRow.cloneNode(true) : createAdjustmentRow();
                 row.dataset.sign = 'charge';
                 row.dataset.amount = '0';
                 row.querySelector('.terminacion-sign').value = 'charge';
-                row.querySelector('.terminacion-description').value = '';
+                var description = row.querySelector('.terminacion-description');
+                description.value = '';
+                description.placeholder = 'Detalle';
                 row.querySelector('.terminacion-amount').value = '$0';
                 tbody.appendChild(row);
                 recalculate(preview);
             }
 
             function labelTerminacionTables(preview) {
-                preview.querySelectorAll('.terminacion-pendientes-table').forEach(function (table) {
+                preview.querySelectorAll('.terminacion-pendientes-table, .terminacion-ajustes-table').forEach(function (table) {
                     var headers = Array.from(table.querySelectorAll('thead th')).map(function (th) {
                         return th.textContent.trim();
                     });
@@ -398,16 +406,25 @@
                         document.querySelectorAll('.modal-backdrop[data-terminacion-stacked]').forEach(function (backdrop) {
                             backdrop.remove();
                         });
+                        ensureTerminacionParentBackdrop(visibleModals[0]);
                     }
+                } else {
+                    document.querySelectorAll('.terminacion-parent-backdrop').forEach(function (backdrop) {
+                        backdrop.remove();
+                    });
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
                 }
             }
 
-            function showFullRefundModal(row, preview) {
-                pendingRemoval = { row: row, preview: preview };
-                var modalEl = document.getElementById('terminacionFullRefundModal');
-                var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                prepareTerminacionModalStack(modalEl);
-                modal.show();
+            function ensureTerminacionParentBackdrop(parentModal) {
+                if (!parentModal || parentModal.id !== 'modalPrincipal') return;
+                if (document.querySelector('.modal-backdrop:not([data-terminacion-stacked])')) return;
+
+                var backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show terminacion-parent-backdrop';
+                backdrop.style.zIndex = (parseInt(parentModal.style.zIndex, 10) || 1055) - 10;
+                document.body.appendChild(backdrop);
             }
 
             function showMessage(titleText, message, type) {
@@ -520,23 +537,13 @@
                 if (event.target.classList.contains('terminacion-remove')) {
                     var row = event.target.closest('.terminacion-ajuste');
                     if (!row) return;
-                    if (preview.querySelectorAll('.terminacion-ajuste').length === 1) showFullRefundModal(row, preview);
-                    else removeAdjustment(row, preview);
+                    removeAdjustment(row, preview);
                 }
             });
 
             document.addEventListener('click', function (event) {
                 var cobroButton = event.target.closest('.btn-cobro');
                 if (cobroButton && cobroButton.closest('.terminacion-preview')) openCobroModal(cobroButton);
-            });
-
-            document.getElementById('terminacionFullRefundAccept').addEventListener('click', function () {
-                if (!pendingRemoval) return;
-                removeAdjustment(pendingRemoval.row, pendingRemoval.preview);
-                pendingRemoval = null;
-                var modalEl = document.getElementById('terminacionFullRefundModal');
-                var modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
             });
 
             document.querySelectorAll('[data-terminacion-stacked-modal="true"]').forEach(function (modalEl) {
@@ -547,6 +554,12 @@
                     modalEl.style.zIndex = '';
                     restoreTerminacionParentModalState();
                 });
+            });
+
+            document.addEventListener('hidden.bs.modal', function (event) {
+                if (!event.target.matches('[data-terminacion-stacked-modal="true"]')) {
+                    restoreTerminacionParentModalState();
+                }
             });
         })();
     </script>

@@ -70,18 +70,19 @@ The system MUST calculate `Total descuentos` as the sum of added discount concep
 
 ### Requirement: Removing All Discount Concepts
 
-The system MUST allow the user to remove every discount concept. Removing the final remaining concept MUST require a custom Bootstrap/modal confirmation with exact text: `¡Atención! se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?` Native `alert`, `confirm`, and `prompt` MUST NOT be used.
+The system MUST allow the user to remove every discount concept without confirmation. When no discount concepts remain, the system MUST show an inline Bootstrap warning near the discounts section communicating: `¡Atención! se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?` Native `alert`, `confirm`, and `prompt` MUST NOT be used.
 
-#### Scenario: Last discount removal requires custom confirmation
+#### Scenario: Last discount removal shows inline warning
 
 - GIVEN only one discount concept remains
 - WHEN the user removes it
-- THEN a custom confirmation modal shows the required text
+- THEN the discount concept is removed without opening a confirmation modal
+- AND an inline warning shows the required business message
 - AND no native browser dialog is invoked.
 
-#### Scenario: User accepts full guarantee refund
+#### Scenario: Full guarantee refund remains editable
 
-- GIVEN the final removal confirmation is visible
-- WHEN the user accepts it
-- THEN all discount concepts are removed
-- AND the refund equals the full guarantee.
+- GIVEN no discount concepts remain
+- WHEN the user adds a new discount concept
+- THEN a new discount row is available
+- AND the warning is hidden after recalculation.

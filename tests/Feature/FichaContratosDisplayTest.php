@@ -111,7 +111,9 @@ class FichaContratosDisplayTest extends TestCase
         $response->assertDontSee('Agregar cobro');
         $response->assertSee('Total descuentos');
         $response->assertSee('Monto a devolver al arrendatario');
+        $response->assertSee('table-card-mobile pendientes-dashboard-table ficha-pendientes-table terminacion-ajustes-table', false);
         $response->assertSee('terminacion-ajuste', false);
+        $response->assertSee('placeholder="Detalle"', false);
         $response->assertSee('terminacion-amount', false);
         $response->assertDontSee('data-sign="charge" data-amount="120000"', false);
     }
@@ -131,19 +133,28 @@ class FichaContratosDisplayTest extends TestCase
         $response->assertSee('No hay cobros pendientes para este contrato.');
         $response->assertSee('Aseo final');
         $response->assertSee('Extra');
-        $response->assertSee('¡Atención! se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?');
+        $response->assertSee('¡Atención!');
+        $response->assertSee('se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?');
         $response->assertDontSee('Agregar cobro');
         $response->assertDontSee('pagado');
         $this->assertStringNotContainsString('alert(', $component);
         $this->assertStringNotContainsString('confirm(', $component);
         $this->assertStringNotContainsString('prompt(', $component);
-        $this->assertStringNotContainsString('alert-warning', $component);
-        $this->assertStringContainsString('id="terminacionFullRefundModal"', $component);
+        $this->assertStringContainsString('data-terminacion-full-refund-warning="true"', $component);
+        $this->assertStringContainsString('border border-warning rounded bg-warning-subtle text-warning-emphasis p-3', $component);
+        $this->assertStringNotContainsString('id="terminacionFullRefundModal"', $component);
+        $this->assertStringNotContainsString('terminacionFullRefundAccept', $component);
+        $this->assertStringNotContainsString('showFullRefundModal', $component);
+        $this->assertStringContainsString('id="modalCobro"', $component);
         $this->assertStringContainsString('data-terminacion-stacked-modal="true"', $component);
         $this->assertStringContainsString("addEventListener('shown.bs.modal'", $component);
         $this->assertStringNotContainsString("addEventListener('show.bs.modal'", $component);
         $this->assertStringContainsString('restoreTerminacionParentModalState', $component);
-        $this->assertStringContainsString('terminacionFullRefundAccept', $component);
+        $this->assertStringContainsString('ensureTerminacionParentBackdrop', $component);
+        $this->assertStringContainsString('modal-backdrop fade show terminacion-parent-backdrop', $component);
+        $this->assertStringContainsString('labelTerminacionTables(preview)', $component);
+        $this->assertStringContainsString('placeholder="Detalle"', $component);
+        $this->assertStringContainsString('description.placeholder = \'Detalle\'', $component);
         $this->assertDoesNotMatchRegularExpression('/Route::(post|put|patch|delete)\([^\n]*(termin|finaliz)/i', $webRoutes . "\n" . $generatedRoutes);
     }
 

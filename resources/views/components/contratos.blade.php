@@ -2,12 +2,33 @@
     $formatMoney = fn ($value) => is_numeric($value) ? '$' . number_format((int) $value, 0, ',', '.') : 'Sin información';
     $formatDate = fn ($value) => $value ? \Illuminate\Support\Carbon::parse($value)->format('d-m-Y') : 'Indefinido';
     $today = \Illuminate\Support\Carbon::now()->format('d-m-Y');
+    $pendingStates = ['pendiente', 'vencido', 'incompleto'];
     $participantClient = function ($contrato, $role) {
         $relationClient = optional($contrato->{$role})->cliente;
 
         return $relationClient ?: optional(
             $contrato->participante_contratos->firstWhere('rol', ucfirst($role))
         )->cliente;
+    };
+    $normalizeCobroState = fn ($state) => ucfirst(strtolower((string) $state));
+    $buildCobroPayload = function ($cobro) use ($normalizeCobroState) {
+        $deudor = optional($cobro->participante_cobros->firstWhere('rol', 'Deudor'));
+        $acreedor = optional($cobro->participante_cobros->firstWhere('rol', 'Acreedor'));
+        $fechaCobro = $cobro->fecha_cobro ? \Illuminate\Support\Carbon::parse($cobro->fecha_cobro) : null;
+
+        return [
+            'id' => $cobro->id,
+            'estado' => $normalizeCobroState($cobro->estado),
+            'tipo' => $cobro->tipo,
+            'monto' => (int) $cobro->monto,
+            'deudor' => optional($deudor->cliente)->nombre ?? 'Sin deudor',
+            'deudor_id' => $deudor->Cliente_id,
+            'acreedor' => optional($acreedor->cliente)->nombre ?? 'Sin acreedor',
+            'acreedor_id' => $acreedor->Cliente_id,
+            'servicio_id' => $cobro->Servicio_id,
+            'fecha_cobro' => optional($fechaCobro)->toIso8601String(),
+            'concepto' => \App\Services\CobroConceptoFormatter::format($cobro->tipo ?? 'Cobro pendiente', $fechaCobro),
+        ];
     };
 @endphp
 
@@ -16,6 +37,25 @@
         $arrendador = $participantClient($contrato, 'arrendador');
         $arrendatario = $participantClient($contrato, 'arrendatario');
         $corredor = $participantClient($contrato, 'corredor');
+        $propiedad = optional($contrato->unidad)->propiedad;
+        $unidadCount = $propiedad ? \App\Models\Unidad::where('Propiedad_id', $propiedad->id)->count() : 0;
+        $headingLocation = $unidadCount > 1
+            ? trim(($contrato->unidad->nombre ?? 'Sin unidad') . ' — ' . ($propiedad->direccion ?? 'Sin propiedad'))
+            : ($propiedad->direccion ?? 'Sin propiedad');
+        $pendingCobros = $contrato->cobros->filter(fn ($cobro) => in_array(strtolower((string) $cobro->estado), $pendingStates, true));
+        $pendingGroups = ['arrendador' => [], 'arrendatario' => [], 'corredor' => []];
+
+        foreach ($pendingCobros as $cobro) {
+            $payload = $buildCobroPayload($cobro);
+            $deudorContrato = $contrato->participante_contratos->firstWhere('Cliente_id', $payload['deudor_id']);
+            $role = strtolower(optional($deudorContrato)->rol ?? 'arrendatario');
+            if (! array_key_exists($role, $pendingGroups)) $role = 'arrendatario';
+            $pendingGroups[$role][] = $payload;
+        }
+
+        $hasArrendadorCobros = count($pendingGroups['arrendador']) > 0;
+        $hasArrendatarioCobros = count($pendingGroups['arrendatario']) > 0;
+        $hasCorredorCobros = count($pendingGroups['corredor']) > 0;
     @endphp
 
     <div class="card mb-4">
@@ -23,7 +63,7 @@
         <div class="card-header">
             <h5>
                 Contrato —
-                {{ $contrato->unidad->propiedad->direccion ?? 'Sin propiedad' }}
+                {{ $headingLocation }}
             </h5>
         </div>
 
@@ -103,6 +143,9 @@
             <div id="vista-terminar-contrato-{{ $contrato->id }}" class="d-none">
                 <div class="terminacion-preview" data-contrato-id="{{ $contrato->id }}" data-garantia="{{ (int) $contrato->garantia }}">
 
+                    <h5>Vista previa de término de contrato</h5>
+                    <p class="text-muted mb-3">Esta vista previa no termina el contrato ni guarda cambios. Inspeccioná la propiedad antes de confirmar cualquier devolución; servicios y gastos comunes proporcionales son avisos automáticos de esta vista previa.</p>
+
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
                             <div class="border rounded p-3 h-100">
@@ -116,23 +159,37 @@
                                 <strong>{{ $today }}</strong>
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">Garantía original</div>
+                                <strong>{{ $formatMoney($contrato->garantia) }}</strong>
+                            </div>
+                        </div>
                     </div>
 
-                    @if($contrato->cobros->isNotEmpty())
-                    <div class="alert alert-warning" role="alert">
+                    @if($pendingCobros->isNotEmpty())
+                    <div class="border border-warning rounded bg-warning-subtle text-warning-emphasis p-3 mb-3" role="status">
                         <strong>¡Atención!</strong>
                         La propiedad aún tiene cobros pendientes. Revisa cada cobro antes de finalizar el contrato.
                     </div>
                     <h6>Cobros pendientes</h6>
-                        <div class="table-responsive mb-3">
-                            <table class="table table-sm table-bordered mb-0">
-                                    <tbody>
-                                    @foreach($contrato->cobros as $cobro)
-                                        <tr class="terminacion-row" data-sign="charge" data-amount="{{ (int) $cobro->monto }}">
-                                            <td>{{ $cobro->tipo ?? 'Cobro pendiente' }}</td>
-                                            <td class="text-end">{{ $formatMoney($cobro->monto) }}</td>
-                                        </tr>
-                                    @endforeach
+                        <div class="table-responsive mb-3" id="terminacion-pendientes-wrapper-{{ $contrato->id }}">
+                            <table class="table mb-0 text-nowrap table-hover table-card-mobile pendientes-dashboard-table ficha-pendientes-table terminacion-pendientes-table">
+                                <thead class="table-light border-light">
+                                    <tr>
+                                        <th><b>Contrato</b></th>
+                                        @if($hasArrendadorCobros)<th data-col="arrendador"><b>Cobros al Arrendador</b></th>@endif
+                                        @if($hasArrendatarioCobros)<th data-col="arrendatario"><b>Cobros al Arrendatario</b></th>@endif
+                                        @if($hasCorredorCobros)<th data-col="corredor"><b>Cobros al Corredor</b></th>@endif
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>{{ $headingLocation }}</td>
+                                        @if($hasArrendadorCobros)<td class="td-cobros text-center">@include('components._pendientes-cobros-buttons', ['cobros' => $pendingGroups['arrendador']])</td>@endif
+                                        @if($hasArrendatarioCobros)<td class="td-cobros text-center">@include('components._pendientes-cobros-buttons', ['cobros' => $pendingGroups['arrendatario']])</td>@endif
+                                        @if($hasCorredorCobros)<td class="td-cobros text-center">@include('components._pendientes-cobros-buttons', ['cobros' => $pendingGroups['corredor']])</td>@endif
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -157,7 +214,8 @@
                                     <td>
                                         <select class="form-select form-select-sm terminacion-sign">
                                             <option value="charge" selected>Aseo final</option>
-                                            <option value="refund">Reparación</option>
+                                            <option value="charge">Reparación</option>
+                                            <option value="charge">Extra</option>
                                         </select>
                                     </td>
                                     <td><input type="text" class="form-control form-control-sm terminacion-description"></td>
@@ -204,8 +262,45 @@
 @endforeach
 
 @once
+    <div class="modal fade" id="modalCobro" tabindex="-1" data-terminacion-stacked-modal="true" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalle del Cobro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modal-body-cobro"></div>
+                <div class="modal-footer">
+                    <button id="btn-registrar" class="btn btn-primary">Registrar pago</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="terminacionFullRefundModal" tabindex="-1" data-terminacion-stacked-modal="true" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title">Confirmar devolución completa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    ¡Atención! se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning" id="terminacionFullRefundAccept">Sí, devolver garantía completa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endonce
+
+@once
     <script>
         (function () {
+            var pendingRemoval = null;
+
             function parseCLP(value) {
                 if (window.stripCLP) return parseInt(window.stripCLP(value), 10) || 0;
                 return parseInt(String(value || '').replace(/\D/g, ''), 10) || 0;
@@ -218,25 +313,18 @@
 
             function recalculate(preview) {
                 var garantia = parseInt(preview.dataset.garantia || '0', 10) || 0;
-                var charges = 0;
-                var refunds = 0;
+                var discounts = 0;
 
-                preview.querySelectorAll('.terminacion-row').forEach(function (row) {
+                preview.querySelectorAll('.terminacion-ajuste').forEach(function (row) {
                     var input = row.querySelector('.terminacion-amount');
-                    var select = row.querySelector('.terminacion-sign');
-                    var amount = input ? parseCLP(input.value) : (parseInt(row.dataset.amount || '0', 10) || 0);
-                    var sign = select ? select.value : row.dataset.sign;
+                    var amount = input ? parseCLP(input.value) : 0;
 
                     row.dataset.amount = amount;
-                    row.dataset.sign = sign;
-                    if (sign === 'refund') refunds += amount;
-                    else charges += amount;
+                    discounts += amount;
                 });
 
-                var net = charges - refunds;
-                preview.querySelector('.terminacion-neto').textContent = formatCLP(net);
-                preview.querySelector('.terminacion-devoluciones').textContent = formatCLP(refunds);
-                preview.querySelector('.terminacion-total').textContent = formatCLP(garantia - net);
+                preview.querySelector('.terminacion-neto').textContent = formatCLP(discounts);
+                preview.querySelector('.terminacion-total').textContent = formatCLP(garantia - discounts);
             }
 
             function addAdjustment(preview) {
@@ -251,10 +339,163 @@
                 recalculate(preview);
             }
 
+            function labelTerminacionTables(preview) {
+                preview.querySelectorAll('.terminacion-pendientes-table').forEach(function (table) {
+                    var headers = Array.from(table.querySelectorAll('thead th')).map(function (th) {
+                        return th.textContent.trim();
+                    });
+                    table.querySelectorAll('tbody tr').forEach(function (tr) {
+                        tr.querySelectorAll('td').forEach(function (td, index) {
+                            if (headers[index]) td.setAttribute('data-label', headers[index]);
+                        });
+                    });
+                });
+            }
+
+            function removeAdjustment(row, preview) {
+                row.remove();
+                recalculate(preview);
+            }
+
+            function nextTerminacionModalZIndex(modalEl) {
+                var visibleModals = Array.from(document.querySelectorAll('.modal.show')).filter(function (visibleModal) {
+                    return visibleModal !== modalEl;
+                }).length;
+
+                return 1055 + ((visibleModals + 1) * 20);
+            }
+
+            function prepareTerminacionModalStack(modalEl) {
+                if (!modalEl) return;
+
+                modalEl.style.zIndex = nextTerminacionModalZIndex(modalEl);
+            }
+
+            function applyTerminacionModalStack(modalEl) {
+                if (!modalEl) return;
+
+                var zIndex = parseInt(modalEl.style.zIndex, 10) || nextTerminacionModalZIndex(modalEl);
+                modalEl.style.zIndex = zIndex;
+
+                setTimeout(function () {
+                    var backdrops = document.querySelectorAll('.modal-backdrop:not([data-terminacion-stacked])');
+                    var backdrop = backdrops[backdrops.length - 1];
+                    if (backdrop) {
+                        backdrop.dataset.terminacionStacked = 'true';
+                        backdrop.style.zIndex = zIndex - 10;
+                    }
+                }, 0);
+            }
+
+            function restoreTerminacionParentModalState() {
+                var visibleModals = document.querySelectorAll('.modal.show');
+
+                if (visibleModals.length > 0) {
+                    document.body.classList.add('modal-open');
+                    document.body.style.overflow = 'hidden';
+
+                    if (visibleModals.length === 1) {
+                        document.querySelectorAll('.modal-backdrop[data-terminacion-stacked]').forEach(function (backdrop) {
+                            backdrop.remove();
+                        });
+                    }
+                }
+            }
+
+            function showFullRefundModal(row, preview) {
+                pendingRemoval = { row: row, preview: preview };
+                var modalEl = document.getElementById('terminacionFullRefundModal');
+                var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                prepareTerminacionModalStack(modalEl);
+                modal.show();
+            }
+
+            function showMessage(titleText, message, type) {
+                var modalEl = document.getElementById('flashModal');
+                if (!modalEl) return;
+                var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                var header = document.getElementById('flashHeader');
+                var title = document.getElementById('flashTitle');
+                var body = document.getElementById('flashBody');
+                if (header) {
+                    header.classList.remove('bg-success', 'bg-danger', 'text-white');
+                    header.classList.add(type === 'success' ? 'bg-success' : 'bg-danger', 'text-white');
+                }
+                if (title) title.innerText = titleText;
+                if (body) body.innerText = message;
+                modal.show();
+            }
+
+            async function registrarPago(cobro) {
+                var btn = document.getElementById('btn-registrar');
+                try {
+                    if (btn) {
+                        btn.disabled = true;
+                        if (typeof window.showElLoading === 'function') window.showElLoading(btn);
+                    }
+
+                    var res = await fetch('/api/cobro/pagar', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            cobro_id: cobro.id,
+                            monto: cobro.monto,
+                            deudor_id: cobro.deudor_id,
+                            acreedor_id: cobro.acreedor_id,
+                            servicio_id: cobro.servicio_id || null
+                        })
+                    });
+
+                    var json = await res.json();
+                    if (json.error) {
+                        showMessage('Error', json.error, 'danger');
+                    } else {
+                        showMessage('Éxito', 'El pago se ha registrado correctamente', 'success');
+                        var modalEl = document.getElementById('modalCobro');
+                        var modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                    }
+                } catch (error) {
+                    showMessage('Error', 'Error de conexión', 'danger');
+                } finally {
+                    if (btn) {
+                        btn.disabled = false;
+                        if (typeof window.hideElLoading === 'function') window.hideElLoading(btn);
+                    }
+                }
+            }
+
+            function openCobroModal(button) {
+                var cobro = JSON.parse(button.dataset.cobro || '{}');
+                var body = document.getElementById('modal-body-cobro');
+                var monto = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(cobro.monto || 0);
+                var fecha = cobro.fecha_cobro ? new Date(cobro.fecha_cobro).toLocaleDateString('es-CL') : 'No definida';
+                var deudor = cobro.deudor_id ? '<a href="/cliente/ficha/' + cobro.deudor_id + '" class="text-decoration-none">' + cobro.deudor + '</a>' : cobro.deudor;
+                var acreedor = cobro.acreedor_id ? '<a href="/cliente/ficha/' + cobro.acreedor_id + '" class="text-decoration-none">' + cobro.acreedor + '</a>' : cobro.acreedor;
+
+                body.innerHTML = '<p><b>Tipo de cobro:</b> ' + (cobro.tipo || 'Cobro pendiente') + '</p>'
+                    + '<p><b>Deudor:</b> ' + (deudor || 'Sin deudor') + '</p>'
+                    + '<p><b>Acreedor:</b> ' + (acreedor || 'Sin acreedor') + '</p>'
+                    + '<p><b>Monto:</b> ' + monto + '</p>'
+                    + '<p><b>Fecha de pago:</b> ' + fecha + '</p>';
+
+                document.getElementById('btn-registrar').onclick = function () { registrarPago(cobro); };
+                var modalEl = document.getElementById('modalCobro');
+                var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                prepareTerminacionModalStack(modalEl);
+                modal.show();
+            }
+
             window.initTerminacionContratoPreview = function (contractId) {
                 setTimeout(function () {
                     var preview = document.querySelector('#modalPrincipalBody .terminacion-preview[data-contrato-id="' + contractId + '"]');
-                    if (preview) recalculate(preview);
+                    if (preview) {
+                        labelTerminacionTables(preview);
+                        recalculate(preview);
+                    }
                 }, 0);
             };
 
@@ -278,9 +519,34 @@
                 if (event.target.classList.contains('terminacion-add')) addAdjustment(preview);
                 if (event.target.classList.contains('terminacion-remove')) {
                     var row = event.target.closest('.terminacion-ajuste');
-                    if (row && preview.querySelectorAll('.terminacion-ajuste').length > 1) row.remove();
-                    recalculate(preview);
+                    if (!row) return;
+                    if (preview.querySelectorAll('.terminacion-ajuste').length === 1) showFullRefundModal(row, preview);
+                    else removeAdjustment(row, preview);
                 }
+            });
+
+            document.addEventListener('click', function (event) {
+                var cobroButton = event.target.closest('.btn-cobro');
+                if (cobroButton && cobroButton.closest('.terminacion-preview')) openCobroModal(cobroButton);
+            });
+
+            document.getElementById('terminacionFullRefundAccept').addEventListener('click', function () {
+                if (!pendingRemoval) return;
+                removeAdjustment(pendingRemoval.row, pendingRemoval.preview);
+                pendingRemoval = null;
+                var modalEl = document.getElementById('terminacionFullRefundModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            });
+
+            document.querySelectorAll('[data-terminacion-stacked-modal="true"]').forEach(function (modalEl) {
+                modalEl.addEventListener('shown.bs.modal', function () {
+                    applyTerminacionModalStack(modalEl);
+                });
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    modalEl.style.zIndex = '';
+                    restoreTerminacionParentModalState();
+                });
             });
         })();
     </script>

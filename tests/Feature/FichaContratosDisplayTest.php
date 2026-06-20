@@ -25,7 +25,7 @@ class FichaContratosDisplayTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee($data['propiedad']->direccion);
-        $response->assertSee($data['unidad']->nombre);
+        $response->assertDontSee("Contrato —\n                {$data['unidad']->nombre}", false);
         $response->assertSee($data['arrendador']->nombre);
         $response->assertSee($data['arrendatario']->nombre);
         $response->assertSee(route('fichacliente.show', $data['arrendador']->id), false);
@@ -33,6 +33,19 @@ class FichaContratosDisplayTest extends TestCase
         $response->assertSee('Cobros pendientes');
         $response->assertSee('Vencido');
         $response->assertSee('Renta pendiente propiedad');
+    }
+
+    public function test_propiedad_contratos_shows_unidad_and_property_for_multi_unit_properties(): void
+    {
+        $data = $this->createActiveContractScenario('Propiedad Multi Unidad Display', pendingState: 'Vencido');
+        Unidad::create(['nombre' => 'Unidad adicional multi display', 'Propiedad_id' => $data['propiedad']->id]);
+
+        $response = $this->get(route('propiedad.contratos', $data['propiedad']->id));
+
+        $response->assertStatus(200);
+        $response->assertSee($data['unidad']->nombre);
+        $response->assertSee($data['propiedad']->direccion);
+        $response->assertSee("{$data['unidad']->nombre} — {$data['propiedad']->direccion}");
     }
 
     public function test_cliente_contratos_displays_context_participants_and_only_client_pending_cobros(): void
@@ -56,7 +69,7 @@ class FichaContratosDisplayTest extends TestCase
         $response->assertSee($data['arrendador']->nombre);
         $response->assertSee($data['arrendatario']->nombre);
         $response->assertSee($data['propiedad']->direccion);
-        $response->assertSee($data['unidad']->nombre);
+        $response->assertDontSee("Contrato —\n                {$data['unidad']->nombre}", false);
         $response->assertSee('Incompleto');
         $response->assertSee('Renta pendiente propiedad');
         $response->assertDontSee('Cobro no relacionado');
@@ -83,10 +96,24 @@ class FichaContratosDisplayTest extends TestCase
         $response->assertSee('Fecha de término');
         $response->assertSee('16-06-2026');
         $response->assertSee('Renta pendiente propiedad');
-        $response->assertSee('Aseo Final');
-        $response->assertSee('Agregar ajuste');
-        $response->assertSee('Total descuentos/cargos');
+        $response->assertSee('table-card-mobile pendientes-dashboard-table ficha-pendientes-table', false);
+        $response->assertSee('Cobros al Arrendatario');
+        $response->assertSee('class="td-cobros text-center"', false);
+        $response->assertSee('class="btn btn-sm btn-warning w-100 text-center btn-cobro"', false);
+        $response->assertSee('data-cobro=', false);
+        $response->assertSee('id="modalCobro"', false);
+        $response->assertSee('data-terminacion-stacked-modal="true"', false);
+        $response->assertSee('applyTerminacionModalStack', false);
+        $response->assertSee('Aseo final');
+        $response->assertSee('Reparación');
+        $response->assertSee('Extra');
+        $response->assertSee('Agregar descuento');
+        $response->assertDontSee('Agregar cobro');
+        $response->assertSee('Total descuentos');
         $response->assertSee('Monto a devolver al arrendatario');
+        $response->assertSee('terminacion-ajuste', false);
+        $response->assertSee('terminacion-amount', false);
+        $response->assertDontSee('data-sign="charge" data-amount="120000"', false);
     }
 
     public function test_cliente_contratos_termination_preview_modal_keeps_empty_pending_state_and_no_persistence_surface(): void
@@ -102,11 +129,21 @@ class FichaContratosDisplayTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Terminar contrato');
         $response->assertSee('No hay cobros pendientes para este contrato.');
-        $response->assertSee('Aseo Final');
+        $response->assertSee('Aseo final');
+        $response->assertSee('Extra');
+        $response->assertSee('¡Atención! se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?');
+        $response->assertDontSee('Agregar cobro');
         $response->assertDontSee('pagado');
         $this->assertStringNotContainsString('alert(', $component);
         $this->assertStringNotContainsString('confirm(', $component);
         $this->assertStringNotContainsString('prompt(', $component);
+        $this->assertStringNotContainsString('alert-warning', $component);
+        $this->assertStringContainsString('id="terminacionFullRefundModal"', $component);
+        $this->assertStringContainsString('data-terminacion-stacked-modal="true"', $component);
+        $this->assertStringContainsString("addEventListener('shown.bs.modal'", $component);
+        $this->assertStringNotContainsString("addEventListener('show.bs.modal'", $component);
+        $this->assertStringContainsString('restoreTerminacionParentModalState', $component);
+        $this->assertStringContainsString('terminacionFullRefundAccept', $component);
         $this->assertDoesNotMatchRegularExpression('/Route::(post|put|patch|delete)\([^\n]*(termin|finaliz)/i', $webRoutes . "\n" . $generatedRoutes);
     }
 

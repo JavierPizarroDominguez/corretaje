@@ -19,6 +19,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class FichaClienteController extends Controller
 {
     private const PENDIENTES_PROPERTY_GROUPS_PER_PAGE = 3;
+    private const CONTRATOS_PER_PAGE = 5;
     private const ESTADOS_PENDIENTES = ['pendiente', 'vencido', 'incompleto', 'Pendiente', 'Vencido', 'Incompleto'];
 
     /**
@@ -485,7 +486,7 @@ class FichaClienteController extends Controller
             'telefonos',
         ])->findOrFail($id);
 
-        $contratosVigentes = Contrato::query()
+        $contratosQuery = Contrato::query()
             ->with([
                 'unidad.propiedad',
                 'arrendador.cliente',
@@ -503,14 +504,20 @@ class FichaClienteController extends Controller
             ])
             ->whereHas('participante_contratos', function ($q) use ($id) {
                 $q->where('Cliente_id', $id);
-            })
-            ->where(function ($query) {
-                $query->whereNull('fecha_termino')
-                      ->orWhere('fecha_termino', '>', now());
-            })
-            ->orderBy('fecha_inicio', 'desc')
-            ->get();
+            });
 
-        return view('cliente.contratos', compact('cliente', 'contratosVigentes'));
+        $contratosVigentes = (clone $contratosQuery)
+            ->whereNull('fecha_termino')
+            ->orderBy('fecha_inicio', 'desc')
+            ->paginate(self::CONTRATOS_PER_PAGE, ['*'], 'contratos_vigentes_page')
+            ->withQueryString();
+
+        $contratosTerminados = (clone $contratosQuery)
+            ->whereNotNull('fecha_termino')
+            ->orderBy('fecha_termino', 'desc')
+            ->paginate(self::CONTRATOS_PER_PAGE, ['*'], 'contratos_terminados_page')
+            ->withQueryString();
+
+        return view('cliente.contratos', compact('cliente', 'contratosVigentes', 'contratosTerminados'));
     }
 }

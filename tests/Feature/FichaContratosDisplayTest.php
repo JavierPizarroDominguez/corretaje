@@ -35,6 +35,43 @@ class FichaContratosDisplayTest extends TestCase
         $response->assertSee('Renta pendiente propiedad');
     }
 
+    public function test_propiedad_contratos_splits_active_and_terminated_contracts_with_independent_pagination(): void
+    {
+        Carbon::setTestNow('2026-06-16 09:00:00');
+        $data = $this->createActiveContractScenario('Propiedad Contratos Pagination', pendingState: 'Vencido');
+
+        for ($i = 1; $i <= 5; $i++) {
+            $this->createContractForScenario($data, "Vigente pagina uno {$i}", "2026-0{$i}-01 00:00:00");
+        }
+
+        for ($i = 1; $i <= 6; $i++) {
+            $terminatedContract = $this->createContractForScenario(
+                $data,
+                "Terminado pagina " . ($i === 1 ? 'dos' : "uno {$i}"),
+                "2025-0{$i}-01 00:00:00",
+                "2026-05-0{$i} 00:00:00"
+            );
+            if ($i === 1) {
+                $terminatedPageTwo = $terminatedContract;
+            }
+        }
+
+        $response = $this->get(route('propiedad.contratos', [
+            'id' => $data['propiedad']->id,
+            'contratos_vigentes_page' => 2,
+            'contratos_terminados_page' => 2,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Contratos Vigentes');
+        $response->assertSee('Contratos Terminados');
+        $response->assertSee($data['unidad']->nombre);
+        $response->assertSee('Terminado pagina dos');
+        $response->assertSee('contratos_vigentes_page=1', false);
+        $response->assertSee('contratos_terminados_page=1', false);
+        $response->assertDontSee("vista-terminar-contrato-{$terminatedPageTwo->id}", false);
+    }
+
     public function test_propiedad_contratos_shows_unidad_and_property_for_multi_unit_properties(): void
     {
         $data = $this->createActiveContractScenario('Propiedad Multi Unidad Display', pendingState: 'Vencido');
@@ -279,5 +316,24 @@ class FichaContratosDisplayTest extends TestCase
         ParticipanteCobro::create(['Cobro_id' => $cobro->id, 'Cliente_id' => $arrendador->id, 'rol' => 'Acreedor', 'monto' => 120000]);
 
         return compact('arrendador', 'arrendatario', 'corredor', 'propiedad', 'unidad', 'contrato', 'cobro');
+    }
+
+    private function createContractForScenario(array $data, string $unidadName, string $fechaInicio, ?string $fechaTermino = null): Contrato
+    {
+        $unidad = Unidad::create(['nombre' => $unidadName, 'Propiedad_id' => $data['propiedad']->id]);
+        $contrato = Contrato::create([
+            'Unidad_id' => $unidad->id,
+            'administracion' => true,
+            'renta' => 500000,
+            'garantia' => 500000,
+            'fecha_inicio' => $fechaInicio,
+            'fecha_termino' => $fechaTermino,
+        ]);
+
+        ParticipanteContrato::create(['Contrato_id' => $contrato->id, 'Cliente_id' => $data['arrendador']->id, 'rol' => 'Arrendador']);
+        ParticipanteContrato::create(['Contrato_id' => $contrato->id, 'Cliente_id' => $data['arrendatario']->id, 'rol' => 'Arrendatario']);
+        ParticipanteContrato::create(['Contrato_id' => $contrato->id, 'Cliente_id' => $data['corredor']->id, 'rol' => 'Corredor']);
+
+        return $contrato;
     }
 }

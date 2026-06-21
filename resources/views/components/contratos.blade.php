@@ -1,4 +1,6 @@
 @php
+    $contratosVigentes = $contratosVigentes ?? collect();
+    $contratosTerminados = $contratosTerminados ?? collect();
     $formatMoney = fn ($value) => is_numeric($value) ? '$' . number_format((int) $value, 0, ',', '.') : 'Sin información';
     $formatDate = fn ($value) => $value ? \Illuminate\Support\Carbon::parse($value)->format('d-m-Y') : 'Indefinido';
     $today = \Illuminate\Support\Carbon::now()->format('d-m-Y');
@@ -32,8 +34,19 @@
     };
 @endphp
 
-@foreach($contratosVigentes as $contrato)
+@foreach([
+    ['title' => 'Contratos Vigentes', 'contracts' => $contratosVigentes, 'showTerminationAction' => true, 'emptyMessage' => 'No hay contratos vigentes.'],
+    ['title' => 'Contratos Terminados', 'contracts' => $contratosTerminados, 'showTerminationAction' => false, 'emptyMessage' => 'No hay contratos terminados.'],
+] as $contractSection)
+<section class="mb-4">
+    <h4 class="mb-3">{{ $contractSection['title'] }}</h4>
+
+    @if($contractSection['contracts']->count() === 0)
+        <p class="text-muted">{{ $contractSection['emptyMessage'] }}</p>
+    @else
+@foreach($contractSection['contracts'] as $contrato)
     @php
+        $showTerminationAction = $contractSection['showTerminationAction'];
         $arrendador = $participantClient($contrato, 'arrendador');
         $arrendatario = $participantClient($contrato, 'arrendatario');
         $corredor = $participantClient($contrato, 'corredor');
@@ -58,7 +71,7 @@
         $hasCorredorCobros = count($pendingGroups['corredor']) > 0;
     @endphp
 
-    <div class="card mb-4" data-terminacion-contract-card="{{ $contrato->id }}">
+    <div class="card mb-4" @if($showTerminationAction) data-terminacion-contract-card="{{ $contrato->id }}" @endif>
 
         <div class="card-header">
             <h5>
@@ -132,6 +145,7 @@
                 </tr>
             </table>
 
+            @if($showTerminationAction)
             <div class="mt-3">
                 <button type="button"
                         class="btn btn-sm btn-danger"
@@ -262,11 +276,21 @@
                     </div>
                 </div>
             </div>
+            @endif
 
         </div>
 
     </div>
 
+@endforeach
+    @endif
+
+    @if(method_exists($contractSection['contracts'], 'links'))
+        <div class="mt-3">
+            {{ $contractSection['contracts']->links() }}
+        </div>
+    @endif
+</section>
 @endforeach
 
 @once

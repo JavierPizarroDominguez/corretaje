@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ClienteSearchController;
 use App\Http\Controllers\Api\PropiedadPorArrendadorController;
 use App\Http\Controllers\Api\PropiedadContratoVigenteController;
 use App\Http\Controllers\Api\PropiedadDireccionCheckController;
+use App\Http\Controllers\Api\TerminarContratoController;
 
 // [GEN:START:administracion_api]
 Route::get('/clientes/search', [ClienteSearchController::class, 'search'])->name('api.clientes.search');
@@ -21,6 +22,7 @@ use App\Http\Controllers\Api\PagarCobroController;
 Route::get('/dashboard/pendientes', [DashboardPendientesController::class, 'index'])->name('api.dashboard.pendientes');
 Route::get('/dashboard/buscador', [DashboardBuscadorController::class, 'search'])->name('api.dashboard.buscador');
 Route::post('/cobro/pagar', [PagarCobroController::class, 'pagar'])->name('api.cobro.pagar');
+Route::post('/contratos/{contrato}/terminar', TerminarContratoController::class)->name('api.contratos.terminar');
 Route::get('/cliente/{id}/pendientes', [App\Http\Controllers\Api\ClientePendientesController::class, 'index'])->name('api.cliente.pendientes');
 Route::get('/propiedad/{id}/pendientes', [App\Http\Controllers\Api\PropiedadPendientesController::class, 'index'])->name('api.propiedad.pendientes');
 // [GEN:END:dashboard_api]

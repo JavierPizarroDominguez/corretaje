@@ -163,29 +163,6 @@ class FichaPropiedadController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | TRANSACCIONES
-        |--------------------------------------------------------------------------
-        */
-
-        $transacciones = Transaccion::query()
-            ->whereHas('cobros', function ($q) use ($id) {
-                $q->where('Propiedad_id', $id)
-                    ->orWhereHas('contrato.unidad', function ($q2) use ($id) {
-                        $q2->where('Propiedad_id', $id);
-                    })
-                    ->orWhereHas('servicio', function ($q2) use ($id) {
-                        $q2->where('Propiedad_id', $id);
-                    });
-            })
-            ->with([
-                'cobros.deudor.cliente',
-                'cobros.acreedor.cliente',
-            ])
-            ->latest('fecha')
-            ->paginate(20, ['*'], 'transacciones_page');
-
-        /*
-        |--------------------------------------------------------------------------
         | COUNT y OPTIONS
         |--------------------------------------------------------------------------
         */
@@ -308,7 +285,6 @@ class FichaPropiedadController extends Controller
             'pendientesPaginator',
             'groupedPendientes',
             'showUnidadColumn',
-            'transacciones',
             'tiposCobroDisponibles',
             'participantOptions',
         ));
@@ -328,14 +304,22 @@ class FichaPropiedadController extends Controller
 
         $baseQuery = $this->baseQuery($id);
 
-        $reparaciones = (clone $baseQuery)
-            ->whereIn('tipo', [
-                'Reparación',
-                'Devolución',
-                'Extra',
+        $transacciones = Transaccion::query()
+            ->whereHas('cobros', function ($q) use ($id) {
+                $q->where('Propiedad_id', $id)
+                    ->orWhereHas('contrato.unidad', function ($q2) use ($id) {
+                        $q2->where('Propiedad_id', $id);
+                    })
+                    ->orWhereHas('servicio', function ($q2) use ($id) {
+                        $q2->where('Propiedad_id', $id);
+                    });
+            })
+            ->with([
+                'cobros.deudor.cliente',
+                'cobros.acreedor.cliente',
             ])
-            ->latest('fecha_cobro')
-            ->paginate(20);
+            ->latest('fecha')
+            ->paginate(20, ['*'], 'transacciones_page');
 
         $cobrosCartola = (clone $baseQuery)
             ->where(function ($query) {
@@ -390,7 +374,7 @@ class FichaPropiedadController extends Controller
         $columnasOrden = ['Ingreso Renta', 'Egreso Renta', 'Luz', 'Agua', 'Gas', 'Gastos Comunes', 'Aseo Municipal'];
         $columnasCartola = array_values(array_intersect($columnasOrden, array_keys($columnasCartola)));
 
-        return view('propiedad.reparaciones', compact('propiedad', 'reparaciones', 'cartola', 'columnasCartola'));
+        return view('propiedad.reparaciones', compact('propiedad', 'transacciones', 'cartola', 'columnasCartola'));
     }
 
     /**

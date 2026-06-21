@@ -5,9 +5,13 @@ namespace Tests\Feature;
 use App\Models\Cliente;
 use App\Models\Cobro;
 use App\Models\Contrato;
+use App\Models\DestinoTransaccion;
+use App\Models\OrigenTransaccion;
 use App\Models\ParticipanteCobro;
 use App\Models\ParticipanteContrato;
 use App\Models\Propiedad;
+use App\Models\Transaccion;
+use App\Models\TransaccionCobro;
 use App\Models\Unidad;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -120,6 +124,43 @@ class FichaPendientesVisualContractTest extends TestCase
         $this->assertStringNotContainsString($propiedadData['fourth_unit_name'], $propiedadSection);
     }
 
+    public function test_transacciones_render_only_inside_historial_movimientos_for_cliente_and_propiedad_fichas(): void
+    {
+        $data = $this->createPendingCobroScenario('Movimientos Transaccion Prop');
+        $this->createTransactionForCobro($data['target'], $data['cobro']);
+
+        $clienteFicha = $this->get(route('fichacliente.show', $data['target']->id));
+        $propiedadFicha = $this->get(route('propiedad.ficha', $data['propiedad']->id));
+        $clienteMovimientos = $this->get(route('cliente.reparaciones', $data['target']->id));
+        $propiedadMovimientos = $this->get(route('propiedad.reparaciones', $data['propiedad']->id));
+
+        $clienteFicha->assertStatus(200);
+        $propiedadFicha->assertStatus(200);
+        $clienteMovimientos->assertStatus(200);
+        $propiedadMovimientos->assertStatus(200);
+
+        foreach ([$clienteFicha, $propiedadFicha] as $response) {
+            $response->assertSee('Historial de movimientos');
+            $response->assertDontSee('Historial de transacciones');
+            $response->assertDontSee('$123.456');
+        }
+
+        foreach ([$clienteMovimientos, $propiedadMovimientos] as $response) {
+            $content = $response->getContent();
+            $cartolaPosition = strpos($content, 'Cartola Unidad');
+            $transaccionesPosition = strpos($content, 'Historial de transacciones');
+
+            $response->assertSee('Historial de transacciones');
+            $response->assertSee('Cartola Unidad');
+            $response->assertSee('$123.456');
+            $response->assertSee('Ingreso Renta Arrendatario');
+            $response->assertDontSee('Reparaciones y gastos extras');
+            $this->assertNotFalse($cartolaPosition, 'Cartola must render on movement pages.');
+            $this->assertNotFalse($transaccionesPosition, 'Transaction history must render on movement pages.');
+            $this->assertLessThan($transaccionesPosition, $cartolaPosition, 'Cartola must appear before transaction history.');
+        }
+    }
+
     private function createPendingCobroScenario(string $direccion, int $unidadCount = 1): array
     {
         $this->sequence++;
@@ -154,6 +195,32 @@ class FichaPendientesVisualContractTest extends TestCase
         ParticipanteCobro::create(['Cobro_id' => $cobro->id, 'Cliente_id' => $corredor->id, 'rol' => 'Acreedor', 'monto' => 100000]);
 
         return compact('target', 'propiedad', 'unidades', 'cobro');
+    }
+
+    private function createTransactionForCobro(Cliente $cliente, Cobro $cobro): Transaccion
+    {
+        $origen = OrigenTransaccion::create([
+            'tipo' => 'Cuenta Bancaria',
+            'Cliente_id' => $cliente->id,
+        ]);
+        $destino = DestinoTransaccion::create([
+            'tipo' => 'Cuenta Bancaria',
+            'Cliente_id' => $cliente->id,
+        ]);
+        $transaccion = Transaccion::create([
+            'monto' => 123456,
+            'fecha' => '2025-06-20 10:00:00',
+            'Destino_Transaccion_id' => $destino->id,
+            'Origen_Transaccion_id' => $origen->id,
+        ]);
+
+        TransaccionCobro::create([
+            'Transaccion_id' => $transaccion->id,
+            'Cobro_id' => $cobro->id,
+            'monto_pagado' => 123456,
+        ]);
+
+        return $transaccion;
     }
 
     private function pendientesSection(string $html): string

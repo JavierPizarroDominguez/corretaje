@@ -81,6 +81,33 @@
 }
 
 /* ========================================
+   PROPERTY SUMMARY CARDS
+   ======================================== */
+.propiedad-summary-card {
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.propiedad-summary-label {
+  color: var(--gray-500);
+  font-size: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.propiedad-summary-value {
+  color: var(--gray-800);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.propiedad-status-badge {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.45rem 0.65rem;
+}
+
+/* ========================================
    CUSTOM FOCUS RING — orange primary
    ======================================== */
 .form-control:focus,

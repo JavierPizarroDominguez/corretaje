@@ -58,7 +58,7 @@
         $hasCorredorCobros = count($pendingGroups['corredor']) > 0;
     @endphp
 
-    <div class="card mb-4">
+    <div class="card mb-4" data-terminacion-contract-card="{{ $contrato->id }}">
 
         <div class="card-header">
             <h5>
@@ -213,9 +213,9 @@
                                 <tr class="terminacion-row terminacion-ajuste" data-sign="charge" data-amount="0">
                                     <td>
                                         <select class="form-select form-select-sm terminacion-sign">
-                                            <option value="charge" selected>Aseo final</option>
-                                            <option value="charge">Reparación</option>
-                                            <option value="charge">Extra</option>
+                                            <option value="Aseo Final" selected>Aseo final</option>
+                                            <option value="Reparación">Reparación</option>
+                                            <option value="Extra">Extra</option>
                                         </select>
                                     </td>
                                     <td><input type="text" class="form-control form-control-sm terminacion-description" placeholder="Detalle"></td>
@@ -227,6 +227,8 @@
                     </div>
 
                     <button type="button" class="btn btn-sm btn-outline-primary terminacion-add">Agregar descuento</button>
+
+                    <div class="alert alert-danger mt-3 d-none terminacion-validation-error" role="alert"></div>
 
                     <div class="border border-warning rounded bg-warning-subtle text-warning-emphasis p-3 mt-3 d-none" role="status" data-terminacion-full-refund-warning="true">
                         <strong>¡Atención!</strong>
@@ -256,6 +258,7 @@
 
                     <div class="text-end mt-3">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-danger terminacion-confirm">Terminar contrato</button>
                     </div>
                 </div>
             </div>
@@ -300,6 +303,7 @@
                 var garantia = parseInt(preview.dataset.garantia || '0', 10) || 0;
                 var discounts = 0;
                 var warning = preview.querySelector('[data-terminacion-full-refund-warning="true"]');
+                var validationError = preview.querySelector('.terminacion-validation-error');
                 var adjustmentRows = preview.querySelectorAll('.terminacion-ajuste');
 
                 adjustmentRows.forEach(function (row) {
@@ -312,7 +316,46 @@
 
                 preview.querySelector('.terminacion-neto').textContent = formatCLP(discounts);
                 preview.querySelector('.terminacion-total').textContent = formatCLP(garantia - discounts);
+                if (validationError && discounts <= garantia) {
+                    validationError.classList.add('d-none');
+                    validationError.textContent = '';
+                }
                 if (warning) warning.classList.toggle('d-none', adjustmentRows.length > 0);
+            }
+
+            function collectTerminationDiscounts(preview) {
+                return Array.from(preview.querySelectorAll('.terminacion-ajuste')).map(function (row) {
+                    var concept = row.querySelector('.terminacion-sign');
+                    var detail = row.querySelector('.terminacion-description');
+                    var amount = row.querySelector('.terminacion-amount');
+
+                    return {
+                        concepto: concept ? concept.value : 'Extra',
+                        detalle: detail ? detail.value.trim() : '',
+                        monto: amount ? parseCLP(amount.value) : 0
+                    };
+                }).filter(function (discount) {
+                    return discount.monto > 0;
+                });
+            }
+
+            function totalTerminationDiscounts(preview) {
+                return collectTerminationDiscounts(preview).reduce(function (total, discount) {
+                    return total + discount.monto;
+                }, 0);
+            }
+
+            function validateTerminationDiscounts(preview) {
+                var garantia = parseInt(preview.dataset.garantia || '0', 10) || 0;
+                var validationError = preview.querySelector('.terminacion-validation-error');
+                var valid = totalTerminationDiscounts(preview) <= garantia;
+
+                if (validationError) {
+                    validationError.classList.toggle('d-none', valid);
+                    validationError.textContent = valid ? '' : 'Los descuentos no pueden superar la garantía.';
+                }
+
+                return valid;
             }
 
             function createAdjustmentRow() {
@@ -321,9 +364,9 @@
                 row.dataset.sign = 'charge';
                 row.dataset.amount = '0';
                 row.innerHTML = '<td><select class="form-select form-select-sm terminacion-sign">'
-                    + '<option value="charge" selected>Aseo final</option>'
-                    + '<option value="charge">Reparación</option>'
-                    + '<option value="charge">Extra</option>'
+                    + '<option value="Aseo Final" selected>Aseo final</option>'
+                    + '<option value="Reparación">Reparación</option>'
+                    + '<option value="Extra">Extra</option>'
                     + '</select></td>'
                     + '<td><input type="text" class="form-control form-control-sm terminacion-description" placeholder="Detalle"></td>'
                     + '<td><input type="text" class="form-control form-control-sm terminacion-amount" value="$0"></td>'
@@ -338,7 +381,7 @@
                 var row = sourceRow ? sourceRow.cloneNode(true) : createAdjustmentRow();
                 row.dataset.sign = 'charge';
                 row.dataset.amount = '0';
-                row.querySelector('.terminacion-sign').value = 'charge';
+                row.querySelector('.terminacion-sign').value = 'Aseo Final';
                 var description = row.querySelector('.terminacion-description');
                 description.value = '';
                 description.placeholder = 'Detalle';
@@ -485,6 +528,64 @@
                 }
             }
 
+            function resolveTerminationError(json) {
+                if (!json) return 'No se pudo terminar el contrato.';
+                if (json.error) return json.error;
+                if (json.message) return json.message;
+                if (json.errors) {
+                    var firstKey = Object.keys(json.errors)[0];
+                    if (firstKey && json.errors[firstKey] && json.errors[firstKey][0]) return json.errors[firstKey][0];
+                }
+
+                return 'No se pudo terminar el contrato.';
+            }
+
+            function removeTerminatedContractFromActiveUi(preview) {
+                var contractId = preview.dataset.contratoId;
+                var card = document.querySelector('[data-terminacion-contract-card="' + contractId + '"]');
+                if (card) card.remove();
+                var modalEl = document.getElementById('modalPrincipal');
+                var modal = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
+                if (modal) modal.hide();
+            }
+
+            async function terminateContract(preview, btn) {
+                if (!validateTerminationDiscounts(preview)) {
+                    return;
+                }
+
+                var contractId = preview.dataset.contratoId;
+                try {
+                    btn.disabled = true;
+                    if (typeof window.showElLoading === 'function') window.showElLoading(btn);
+
+                    var res = await fetch('/api/contratos/' + contractId + '/terminar', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            descuentos: collectTerminationDiscounts(preview)
+                        })
+                    });
+                    var json = await res.json();
+
+                    if (!res.ok || json.error || json.errors) {
+                        showMessage('Error', resolveTerminationError(json), 'danger');
+                        return;
+                    }
+
+                    showMessage('Éxito', 'El contrato se terminó correctamente.', 'success');
+                    removeTerminatedContractFromActiveUi(preview);
+                } catch (error) {
+                    showMessage('Error', 'Error de conexión', 'danger');
+                } finally {
+                    btn.disabled = false;
+                    if (typeof window.hideElLoading === 'function') window.hideElLoading(btn);
+                }
+            }
+
             function openCobroModal(button) {
                 var cobro = JSON.parse(button.dataset.cobro || '{}');
                 var body = document.getElementById('modal-body-cobro');
@@ -539,6 +640,7 @@
                     if (!row) return;
                     removeAdjustment(row, preview);
                 }
+                if (event.target.classList.contains('terminacion-confirm')) terminateContract(preview, event.target);
             });
 
             document.addEventListener('click', function (event) {

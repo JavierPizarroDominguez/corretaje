@@ -84,6 +84,7 @@ class FichaContratosDisplayTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Terminar contrato');
+        $response->assertSee("data-terminacion-contract-card=\"{$data['contrato']->id}\"", false);
         $response->assertSee("vista-terminar-contrato-{$data['contrato']->id}", false);
         $response->assertSee('Vista previa de término de contrato');
         $response->assertSee('Esta vista previa no termina el contrato ni guarda cambios');
@@ -115,6 +116,8 @@ class FichaContratosDisplayTest extends TestCase
         $response->assertSee('terminacion-ajuste', false);
         $response->assertSee('placeholder="Detalle"', false);
         $response->assertSee('terminacion-amount', false);
+        $response->assertSee('terminacion-validation-error', false);
+        $response->assertSee('terminacion-confirm', false);
         $response->assertDontSee('data-sign="charge" data-amount="120000"', false);
     }
 
@@ -156,6 +159,31 @@ class FichaContratosDisplayTest extends TestCase
         $this->assertStringContainsString('placeholder="Detalle"', $component);
         $this->assertStringContainsString('description.placeholder = \'Detalle\'', $component);
         $this->assertDoesNotMatchRegularExpression('/Route::(post|put|patch|delete)\([^\n]*(termin|finaliz)/i', $webRoutes . "\n" . $generatedRoutes);
+    }
+
+    public function test_termination_modal_confirm_uses_fetch_loading_modal_feedback_and_frontend_ceiling_validation(): void
+    {
+        $component = file_get_contents(resource_path('views/components/contratos.blade.php'));
+
+        $this->assertStringNotContainsString('alert(', $component);
+        $this->assertStringNotContainsString('confirm(', $component);
+        $this->assertStringNotContainsString('prompt(', $component);
+        $this->assertStringContainsString('terminacion-confirm', $component);
+        $this->assertStringContainsString('collectTerminationDiscounts(preview)', $component);
+        $this->assertStringContainsString('validateTerminationDiscounts(preview)', $component);
+        $this->assertStringContainsString('Los descuentos no pueden superar la garantía.', $component);
+        $this->assertMatchesRegularExpression('/if \(!validateTerminationDiscounts\(preview\)\) \{\s*return;\s*\}/s', $component);
+        $this->assertStringContainsString("fetch('/api/contratos/' + contractId + '/terminar'", $component);
+        $this->assertStringContainsString("'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content", $component);
+        $this->assertStringContainsString('body: JSON.stringify({', $component);
+        $this->assertStringContainsString('descuentos: collectTerminationDiscounts(preview)', $component);
+        $this->assertStringContainsString('btn.disabled = true', $component);
+        $this->assertStringContainsString('window.showElLoading(btn)', $component);
+        $this->assertStringContainsString('btn.disabled = false', $component);
+        $this->assertStringContainsString('window.hideElLoading(btn)', $component);
+        $this->assertStringContainsString("showMessage('Éxito'", $component);
+        $this->assertStringContainsString("showMessage('Error'", $component);
+        $this->assertStringContainsString('removeTerminatedContractFromActiveUi(preview)', $component);
     }
 
     public function test_contrato_show_displays_readable_summary_participants_property_dates_guarantee_and_cobros(): void

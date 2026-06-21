@@ -220,23 +220,6 @@ class FichaClienteController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | TRANSACCIONES
-        |--------------------------------------------------------------------------
-        */
-
-        $transacciones = Transaccion::query()
-            ->whereHas('cobros.participante_cobros', function ($q) use ($id) {
-                $q->where('Cliente_id', $id);
-            })
-            ->with([
-                'cobros.deudor.cliente',
-                'cobros.acreedor.cliente',
-            ])
-            ->latest('fecha')
-            ->paginate(20, ['*'], 'transacciones_page');
-
-        /*
-        |--------------------------------------------------------------------------
         | COUNT y OPTIONS
         |--------------------------------------------------------------------------
         */
@@ -390,7 +373,6 @@ class FichaClienteController extends Controller
                 'pendientes',
                 'pendientesPaginator',
                 'groupedPendientes',
-                'transacciones',
                 'participanteCobroCount',
                 'participanteCobroOptions',
                 'tiposCobroDisponibles',
@@ -418,14 +400,16 @@ class FichaClienteController extends Controller
 
         $baseQuery = $this->baseQuery($id);
 
-        $reparaciones = (clone $baseQuery)
-            ->whereIn('tipo', [
-                'Reparación',
-                'Devolución',
-                'Extra',
+        $transacciones = Transaccion::query()
+            ->whereHas('cobros.participante_cobros', function ($q) use ($id) {
+                $q->where('Cliente_id', $id);
+            })
+            ->with([
+                'cobros.deudor.cliente',
+                'cobros.acreedor.cliente',
             ])
-            ->latest('fecha_cobro')
-            ->paginate(20);
+            ->latest('fecha')
+            ->paginate(20, ['*'], 'transacciones_page');
 
         $cobrosCartola = (clone $baseQuery)
             ->where(function ($query) {
@@ -480,7 +464,7 @@ class FichaClienteController extends Controller
         $columnasOrden = ['Ingreso Renta', 'Egreso Renta', 'Luz', 'Agua', 'Gas', 'Gastos Comunes', 'Aseo Municipal'];
         $columnasCartola = array_values(array_intersect($columnasOrden, array_keys($columnasCartola)));
 
-        return view('cliente.reparaciones', compact('cliente', 'reparaciones', 'cartola', 'columnasCartola'));
+        return view('cliente.reparaciones', compact('cliente', 'transacciones', 'cartola', 'columnasCartola'));
     }
 
     /**

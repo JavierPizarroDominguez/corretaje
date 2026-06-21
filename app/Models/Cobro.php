@@ -113,4 +113,14 @@ public function acreedor()
 		return $this->belongsToMany(Transaccion::class, 'Transaccion_Cobro', 'Cobro_id', 'Transaccion_id')
 					->withPivot('monto_pagado');
 	}
+
+	public function descuentosGarantia()
+	{
+		return $this->hasMany(DescuentoGarantia::class, 'Cobro_Devolucion_id');
+	}
+
+	public function devolucionGarantia()
+	{
+		return $this->hasOne(DescuentoGarantia::class, 'Cobro_Descuento_id');
+	}
 }

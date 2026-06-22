@@ -52,9 +52,9 @@ class TerminarContratoControllerTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_terminates_contract_with_positive_refund_discount_links_and_transaction(): void
+    public function test_terminates_contract_with_pending_refund_and_proportional_cobros_only(): void
     {
-        $scenario = $this->createActiveContractScenario(500000);
+        $scenario = $this->createActiveContractScenario(500000, 300000, 5);
 
         $response = $this->postJson("/api/contratos/{$scenario['contrato']->id}/terminar", [
             'descuentos' => [
@@ -66,22 +66,11 @@ class TerminarContratoControllerTest extends TestCase
         $response->assertStatus(200)
             ->assertJson([
                 'contrato_id' => $scenario['contrato']->id,
-                'total_descuentos' => 80000,
-                'monto_devolucion' => 420000,
+                'monto_devolucion' => 500000,
                 'devolucion_estado' => 'Pendiente',
             ]);
 
         $this->assertSame('2026-06-20 15:30:00', $scenario['contrato']->fresh()->fecha_termino->format('Y-m-d H:i:s'));
-
-        $discountCobros = Cobro::where('Contrato_id', $scenario['contrato']->id)
-            ->where('estado', 'Pagado')
-            ->whereIn('tipo', ['Aseo Final', 'Reparación'])
-            ->orderBy('monto')
-            ->get();
-
-        $this->assertCount(2, $discountCobros);
-        $this->assertSame([30000, 50000], $discountCobros->pluck('monto')->all());
-        $this->assertSame('Pintura muro', $discountCobros->firstWhere('tipo', 'Reparación')->detalle);
 
         $refund = Cobro::where('Contrato_id', $scenario['contrato']->id)
             ->where('tipo', 'Devolución Garantía Arrendatario')
@@ -89,49 +78,62 @@ class TerminarContratoControllerTest extends TestCase
 
         $this->assertNotNull($refund);
         $this->assertSame('Pendiente', $refund->estado);
-        $this->assertSame(420000, $refund->monto);
+        $this->assertSame(500000, $refund->monto);
+        $this->assertParticipant($refund, 'Deudor', $scenario['arrendador']->id, 500000);
+        $this->assertParticipant($refund, 'Acreedor', $scenario['arrendatario']->id, 500000);
 
-        $this->assertSame(2, DescuentoGarantia::where('Cobro_Devolucion_id', $refund->id)->count());
-        $this->assertSame(1, TransaccionCobro::where('Cobro_id', $refund->id)->count());
-        $this->assertSame(1, Transaccion::where('monto', 420000)->count());
-    }
-
-    public function test_full_discount_creates_zero_paid_refund_without_transaction_rows(): void
-    {
-        $scenario = $this->createActiveContractScenario(500000);
-
-        $response = $this->postJson("/api/contratos/{$scenario['contrato']->id}/terminar", [
-            'descuentos' => [
-                ['concepto' => 'Extra', 'detalle' => 'Reposición completa', 'monto' => 500000],
-            ],
-        ]);
-
-        $response->assertStatus(200)
-            ->assertJson([
-                'total_descuentos' => 500000,
-                'monto_devolucion' => 0,
-                'devolucion_estado' => 'Pagado',
-            ]);
-
-        $refund = Cobro::where('Contrato_id', $scenario['contrato']->id)
-            ->where('tipo', 'Devolución Garantía Arrendatario')
+        $ingreso = Cobro::where('Contrato_id', $scenario['contrato']->id)
+            ->where('tipo', 'Ingreso Proporcional Renta Arrendatario')
+            ->first();
+        $egreso = Cobro::where('Contrato_id', $scenario['contrato']->id)
+            ->where('tipo', 'Egreso Proporcional Renta Arrendador')
             ->first();
 
-        $this->assertNotNull($refund);
-        $this->assertSame('Pagado', $refund->estado);
-        $this->assertSame(0, $refund->monto);
-        $this->assertSame(1, DescuentoGarantia::where('Cobro_Devolucion_id', $refund->id)->count());
+        $this->assertNotNull($ingreso);
+        $this->assertSame('Pendiente', $ingreso->estado);
+        $this->assertSame(150000, $ingreso->monto);
+        $this->assertParticipant($ingreso, 'Deudor', $scenario['arrendatario']->id, 150000);
+        $this->assertParticipant($ingreso, 'Acreedor', $scenario['corredor']->id, 150000);
+
+        $this->assertNotNull($egreso);
+        $this->assertSame('Pendiente', $egreso->estado);
+        $this->assertSame(150000, $egreso->monto);
+        $this->assertParticipant($egreso, 'Deudor', $scenario['corredor']->id, 150000);
+        $this->assertParticipant($egreso, 'Acreedor', $scenario['arrendador']->id, 150000);
+
+        $this->assertSame(0, Cobro::where('Contrato_id', $scenario['contrato']->id)->whereIn('tipo', ['Aseo Final', 'Reparación'])->count());
+        $this->assertSame(0, DescuentoGarantia::where('Cobro_Devolucion_id', $refund->id)->count());
+        $this->assertSame(0, TransaccionCobro::where('Cobro_id', $refund->id)->count());
+        $this->assertSame(0, Transaccion::count());
+    }
+
+    public function test_repeated_termination_is_idempotent_without_duplicate_cobros(): void
+    {
+        $scenario = $this->createActiveContractScenario(500000, 300000, 5);
+
+        $first = $this->postJson("/api/contratos/{$scenario['contrato']->id}/terminar");
+        $second = $this->postJson("/api/contratos/{$scenario['contrato']->id}/terminar");
+
+        $first->assertStatus(200);
+        $second->assertStatus(200)
+            ->assertJsonPath('devolucion_cobro_id', $first->json('devolucion_cobro_id'))
+            ->assertJsonPath('ingreso_proporcional_cobro_id', $first->json('ingreso_proporcional_cobro_id'))
+            ->assertJsonPath('egreso_proporcional_cobro_id', $first->json('egreso_proporcional_cobro_id'));
+
+        $this->assertSame(1, Cobro::where('Contrato_id', $scenario['contrato']->id)->where('tipo', 'Devolución Garantía Arrendatario')->count());
+        $this->assertSame(1, Cobro::where('Contrato_id', $scenario['contrato']->id)->where('tipo', 'Ingreso Proporcional Renta Arrendatario')->count());
+        $this->assertSame(1, Cobro::where('Contrato_id', $scenario['contrato']->id)->where('tipo', 'Egreso Proporcional Renta Arrendador')->count());
+        $refund = Cobro::where('Contrato_id', $scenario['contrato']->id)->where('tipo', 'Devolución Garantía Arrendatario')->firstOrFail();
+        $this->assertParticipant($refund, 'Deudor', $scenario['arrendador']->id, 500000);
+        $this->assertParticipant($refund, 'Acreedor', $scenario['arrendatario']->id, 500000);
+        $this->assertSame(0, DescuentoGarantia::count());
         $this->assertSame(0, Transaccion::count());
         $this->assertSame(0, TransaccionCobro::count());
     }
 
-    public function test_excessive_discounts_are_rejected_without_partial_writes(): void
+    public function test_discount_payload_is_ignored_at_termination(): void
     {
         $scenario = $this->createActiveContractScenario(500000);
-        $cobroCount = Cobro::count();
-        $transactionCount = Transaccion::count();
-        $transactionCobroCount = TransaccionCobro::count();
-        $discountLinkCount = DescuentoGarantia::count();
 
         $response = $this->postJson("/api/contratos/{$scenario['contrato']->id}/terminar", [
             'descuentos' => [
@@ -139,60 +141,22 @@ class TerminarContratoControllerTest extends TestCase
             ],
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['descuentos']);
-
-        $this->assertNull($scenario['contrato']->fresh()->fecha_termino);
-        $this->assertSame($cobroCount, Cobro::count());
-        $this->assertSame($transactionCount, Transaccion::count());
-        $this->assertSame($transactionCobroCount, TransaccionCobro::count());
-        $this->assertSame($discountLinkCount, DescuentoGarantia::count());
-    }
-
-    public function test_rejects_unknown_discount_concepts_and_non_integer_amounts(): void
-    {
-        $scenario = $this->createActiveContractScenario(500000);
-
-        $response = $this->postJson("/api/contratos/{$scenario['contrato']->id}/terminar", [
-            'descuentos' => [
-                ['concepto' => 'Garantía', 'detalle' => 'Concepto inválido', 'monto' => 10000],
-                ['concepto' => 'Aseo Final', 'detalle' => 'Monto decimal', 'monto' => 10000.50],
-            ],
-        ]);
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['descuentos.0.concepto', 'descuentos.1.monto']);
-
-        $this->assertNull($scenario['contrato']->fresh()->fecha_termino);
-        $this->assertSame(0, Cobro::where('Contrato_id', $scenario['contrato']->id)->count());
-    }
-
-    public function test_uses_contract_participants_for_discount_and_refund_cobros(): void
-    {
-        $scenario = $this->createActiveContractScenario(500000);
-
-        $response = $this->postJson("/api/contratos/{$scenario['contrato']->id}/terminar", [
-            'descuentos' => [
-                ['concepto' => 'Aseo Final', 'detalle' => 'Limpieza final', 'monto' => 80000],
-            ],
-        ]);
-
         $response->assertStatus(200);
 
-        $discount = Cobro::where('Contrato_id', $scenario['contrato']->id)
-            ->where('tipo', 'Aseo Final')
-            ->first();
-        $refund = Cobro::where('Contrato_id', $scenario['contrato']->id)
-            ->where('tipo', 'Devolución Garantía Arrendatario')
-            ->first();
-
-        $this->assertParticipant($discount, 'Deudor', $scenario['arrendatario']->id, 80000);
-        $this->assertParticipant($discount, 'Acreedor', $scenario['arrendador']->id, 80000);
-        $this->assertParticipant($refund, 'Deudor', $scenario['arrendador']->id, 420000);
-        $this->assertParticipant($refund, 'Acreedor', $scenario['arrendatario']->id, 420000);
+        $this->assertNotNull($scenario['contrato']->fresh()->fecha_termino);
+        $this->assertSame(0, Cobro::where('Contrato_id', $scenario['contrato']->id)->where('tipo', 'Aseo Final')->count());
+        $this->assertSame(0, DescuentoGarantia::count());
     }
 
-    private function createActiveContractScenario(int $garantia): array
+    public function test_schema_dump_contains_proportional_cobro_types(): void
+    {
+        $schema = file_get_contents(base_path('corretaje-bd.sql'));
+
+        $this->assertStringContainsString('Ingreso Proporcional Renta Arrendatario', $schema);
+        $this->assertStringContainsString('Egreso Proporcional Renta Arrendador', $schema);
+    }
+
+    private function createActiveContractScenario(int $garantia, int $renta = 500000, int $diaPago = 1): array
     {
         $seq = uniqid('terminar-', true);
         $arrendador = Cliente::create(['nombre' => "Arrendador {$seq}", 'fecha_creacion' => now()]);
@@ -203,8 +167,9 @@ class TerminarContratoControllerTest extends TestCase
         $contrato = Contrato::create([
             'Unidad_id' => $unidad->id,
             'administracion' => true,
-            'renta' => 500000,
+            'renta' => $renta,
             'garantia' => $garantia,
+            'dia_pago' => $diaPago,
             'fecha_inicio' => '2025-01-01 00:00:00',
             'fecha_termino' => null,
         ]);

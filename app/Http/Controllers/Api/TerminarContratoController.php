@@ -15,6 +15,6 @@ class TerminarContratoController extends Controller
         Contrato $contrato,
         TerminarContratoService $service
     ): JsonResponse {
-        return response()->json($service->terminar($contrato, $request->discounts()));
+        return response()->json($service->terminar($contrato));
     }
 }

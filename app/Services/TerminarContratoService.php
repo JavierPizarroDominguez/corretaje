@@ -4,89 +4,71 @@ namespace App\Services;
 
 use App\Models\Cobro;
 use App\Models\Contrato;
-use App\Models\DescuentoGarantia;
-use App\Models\DestinoTransaccion;
-use App\Models\OrigenTransaccion;
 use App\Models\ParticipanteCobro;
-use App\Models\Transaccion;
-use App\Models\TransaccionCobro;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class TerminarContratoService
 {
-    public function terminar(Contrato $contrato, array $descuentos): array
+    public const TIPO_DEVOLUCION_GARANTIA = 'Devolución Garantía Arrendatario';
+    public const TIPO_INGRESO_PROPORCIONAL = 'Ingreso Proporcional Renta Arrendatario';
+    public const TIPO_EGRESO_PROPORCIONAL = 'Egreso Proporcional Renta Arrendador';
+
+    public function terminar(Contrato $contrato): array
     {
-        return DB::transaction(function () use ($contrato, $descuentos): array {
+        return DB::transaction(function () use ($contrato): array {
             $contrato = Contrato::query()
                 ->whereKey($contrato->id)
                 ->lockForUpdate()
-                ->with(['unidad.propiedad', 'participante_contratos'])
+                ->with(['unidad.propiedad', 'participante_contratos', 'cobros.participante_cobros'])
                 ->firstOrFail();
 
             $garantia = (int) $contrato->garantia;
-            $totalDescuentos = $this->sumDiscounts($descuentos);
-
-            if ($totalDescuentos > $garantia) {
-                throw ValidationException::withMessages([
-                    'descuentos' => ['El total de descuentos no puede superar la garantía.'],
-                ]);
-            }
+            $renta = (int) $contrato->renta;
 
             $arrendatarioId = $this->participantId($contrato, 'Arrendatario');
             $arrendadorId = $this->participantId($contrato, 'Arrendador');
+            $corredorId = $this->participantId($contrato, 'Corredor');
 
-            if (! $arrendatarioId || ! $arrendadorId) {
+            if (! $arrendatarioId || ! $arrendadorId || ! $corredorId) {
                 throw ValidationException::withMessages([
-                    'contrato' => ['El contrato debe tener arrendatario y arrendador para terminarlo.'],
+                    'contrato' => ['El contrato debe tener arrendatario, arrendador y corredor para terminarlo.'],
                 ]);
             }
 
-            $contrato->fecha_termino = now();
-            $contrato->save();
-
-            $discountCobros = [];
-            foreach ($descuentos as $descuento) {
-                $discountCobros[] = $this->createDiscountCobro(
-                    $contrato,
-                    $descuento,
-                    $arrendatarioId,
-                    $arrendadorId
-                );
+            if ($contrato->fecha_termino === null) {
+                $contrato->fecha_termino = now();
+                $contrato->save();
             }
 
-            $montoDevolucion = $garantia - $totalDescuentos;
-            $refundCobro = $this->createRefundCobro($contrato, $montoDevolucion, $arrendadorId, $arrendatarioId);
+            $fechaTermino = Carbon::parse($contrato->fecha_termino);
+            $montoProporcional = self::calculateProportionalRent($renta, $fechaTermino, (int) $contrato->dia_pago);
 
-            foreach ($discountCobros as $discountCobro) {
-                DescuentoGarantia::create([
-                    'Cobro_Devolucion_id' => $refundCobro->id,
-                    'Cobro_Descuento_id' => $discountCobro->id,
-                ]);
-            }
-
-            $transaccion = null;
-            if ($montoDevolucion > 0) {
-                $transaccion = $this->createRefundTransaction($refundCobro, $arrendadorId, $arrendatarioId);
-            }
+            $refundCobro = $this->firstOrCreateCobro($contrato, self::TIPO_DEVOLUCION_GARANTIA, $garantia, 'Devolución de garantía por término de contrato', $arrendadorId, $arrendatarioId);
+            $ingresoProporcional = $this->firstOrCreateCobro($contrato, self::TIPO_INGRESO_PROPORCIONAL, $montoProporcional, 'Renta proporcional por término de contrato', $arrendatarioId, $corredorId);
+            $egresoProporcional = $this->firstOrCreateCobro($contrato, self::TIPO_EGRESO_PROPORCIONAL, $montoProporcional, 'Renta proporcional por término de contrato', $corredorId, $arrendadorId);
 
             return [
                 'contrato_id' => $contrato->id,
                 'fecha_termino' => $contrato->fecha_termino?->toDateTimeString(),
-                'total_descuentos' => $totalDescuentos,
-                'monto_devolucion' => $montoDevolucion,
+                'monto_devolucion' => $refundCobro->monto,
                 'devolucion_cobro_id' => $refundCobro->id,
                 'devolucion_estado' => $refundCobro->estado,
-                'transaccion_id' => $transaccion?->id,
+                'ingreso_proporcional_cobro_id' => $ingresoProporcional->id,
+                'egreso_proporcional_cobro_id' => $egresoProporcional->id,
             ];
         });
     }
 
-    private function sumDiscounts(array $descuentos): int
+    public static function calculateProportionalRent(int $renta, CarbonInterface $fechaTermino, int $diaPago): int
     {
-        return collect($descuentos)->sum(function (array $descuento): int {
-            return (int) $descuento['monto'];
-        });
+        $daysInMonth = $fechaTermino->daysInMonth;
+        $clampedPaymentDay = min(max($diaPago, 1), $daysInMonth);
+        $proportionalDays = max(0, $fechaTermino->day - $clampedPaymentDay);
+
+        return (int) round($renta / $daysInMonth * $proportionalDays);
     }
 
     private function participantId(Contrato $contrato, string $rol): ?int
@@ -96,43 +78,28 @@ class TerminarContratoService
             ?->Cliente_id;
     }
 
-    private function createDiscountCobro(Contrato $contrato, array $descuento, int $arrendatarioId, int $arrendadorId): Cobro
+    private function firstOrCreateCobro(Contrato $contrato, string $tipo, int $monto, string $detalle, int $deudorId, int $acreedorId): Cobro
     {
-        $monto = (int) $descuento['monto'];
-        $cobro = Cobro::create([
-            'fecha_cobro' => now(),
-            'estado' => 'Pagado',
-            'tipo' => $descuento['concepto'],
-            'monto' => $monto,
-            'detalle' => $descuento['detalle'] ?? null,
-            'Contrato_id' => $contrato->id,
-            'Servicio_id' => null,
-            'Propiedad_id' => $contrato->unidad?->Propiedad_id,
-            'Unidad_id' => $contrato->Unidad_id,
-        ]);
+        $cobro = Cobro::where('Contrato_id', $contrato->id)
+            ->where('tipo', $tipo)
+            ->first();
 
-        $this->createParticipant($cobro, $arrendatarioId, 'Deudor', $monto);
-        $this->createParticipant($cobro, $arrendadorId, 'Acreedor', $monto);
+        if (! $cobro) {
+            $cobro = Cobro::create([
+                'fecha_cobro' => now(),
+                'estado' => 'Pendiente',
+                'tipo' => $tipo,
+                'monto' => $monto,
+                'detalle' => $detalle,
+                'Contrato_id' => $contrato->id,
+                'Servicio_id' => null,
+                'Propiedad_id' => $contrato->unidad?->Propiedad_id,
+                'Unidad_id' => $contrato->Unidad_id,
+            ]);
 
-        return $cobro;
-    }
-
-    private function createRefundCobro(Contrato $contrato, int $monto, int $arrendadorId, int $arrendatarioId): Cobro
-    {
-        $cobro = Cobro::create([
-            'fecha_cobro' => now(),
-            'estado' => $monto > 0 ? 'Pendiente' : 'Pagado',
-            'tipo' => 'Devolución Garantía Arrendatario',
-            'monto' => $monto,
-            'detalle' => 'Devolución de garantía por término de contrato',
-            'Contrato_id' => $contrato->id,
-            'Servicio_id' => null,
-            'Propiedad_id' => $contrato->unidad?->Propiedad_id,
-            'Unidad_id' => $contrato->Unidad_id,
-        ]);
-
-        $this->createParticipant($cobro, $arrendadorId, 'Deudor', $monto);
-        $this->createParticipant($cobro, $arrendatarioId, 'Acreedor', $monto);
+            $this->createParticipant($cobro, $deudorId, 'Deudor', $monto);
+            $this->createParticipant($cobro, $acreedorId, 'Acreedor', $monto);
+        }
 
         return $cobro;
     }
@@ -147,34 +114,4 @@ class TerminarContratoService
         ]);
     }
 
-    private function createRefundTransaction(Cobro $refundCobro, int $arrendadorId, int $arrendatarioId): Transaccion
-    {
-        $origen = OrigenTransaccion::firstOrCreate([
-            'tipo' => 'Cuenta Bancaria',
-            'Cliente_id' => $arrendadorId,
-            'Cuenta_Bancaria_id' => null,
-        ]);
-
-        $destino = DestinoTransaccion::firstOrCreate([
-            'tipo' => 'Cuenta Bancaria',
-            'Cliente_id' => $arrendatarioId,
-            'Servicio_id' => null,
-            'Cuenta_Bancaria_id' => null,
-        ]);
-
-        $transaccion = Transaccion::create([
-            'monto' => $refundCobro->monto,
-            'fecha' => now(),
-            'Origen_Transaccion_id' => $origen->id,
-            'Destino_Transaccion_id' => $destino->id,
-        ]);
-
-        TransaccionCobro::create([
-            'Transaccion_id' => $transaccion->id,
-            'Cobro_id' => $refundCobro->id,
-            'monto_pagado' => $refundCobro->monto,
-        ]);
-
-        return $transaccion;
-    }
 }

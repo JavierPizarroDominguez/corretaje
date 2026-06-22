@@ -34,6 +34,9 @@ return [
             ],
             'ciudad' => [
                 0 => 'nombre'
+            ],
+            'empresa' => [
+                0 => 'nombre'
             ]
         ],
 
@@ -45,6 +48,7 @@ return [
             'cliente' => 'nombre',
             'cobro' => 'id',
             'nacionalidad' => 'nombre',
-            'ciudad' => 'nombre'
+            'ciudad' => 'nombre',
+            'empresa' => 'nombre'
         ],
 ];

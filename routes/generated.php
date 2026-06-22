@@ -154,3 +154,24 @@ Route::put('/unidad/{id}', [UnidadController::class, 'update'])->name('unidad.up
 Route::delete('/unidad/{id}', [UnidadController::class, 'destroy'])->name('unidad.destroy');
 
 // [GEN:END:routes_Unidad]
+
+
+// [GEN:START:routes_Servicio]
+use App\Http\Controllers\Crud\ServicioController;
+
+Route::get('/servicio', [ServicioController::class, 'index'])->name('servicio.index');
+Route::get('/servicio/create', [ServicioController::class, 'create'])->name('servicio.create');
+Route::post('/servicio', [ServicioController::class, 'store'])->name('servicio.store');
+Route::get('/servicio/{id}', [ServicioController::class, 'show'])->name('servicio.show');
+Route::get('/servicio/{id}/edit', [ServicioController::class, 'edit'])->name('servicio.edit');
+Route::put('/servicio/{id}', [ServicioController::class, 'update'])->name('servicio.update');
+Route::delete('/servicio/{id}', [ServicioController::class, 'destroy'])->name('servicio.destroy');
+
+// [GEN:END:routes_Servicio]
+
+
+// [GEN:START:routes_ServicioFilter]
+use App\Http\Controllers\Crud\ServicioFilterController;
+
+Route::get('/servicio-filtrar', [ServicioFilterController::class, 'index'])->name('servicio.filtrar');
+// [GEN:END:routes_ServicioFilter]

@@ -232,127 +232,49 @@
             <div class="mt-3">
                 <button type="button"
                         class="btn btn-sm btn-danger"
-                        onclick="abrirModal({titulo: 'Término de contrato y devolución de garantía', vista: 'vista-terminar-contrato-{{ $contrato->id }}', size: 'modal-xl'}); window.initTerminacionContratoPreview && window.initTerminacionContratoPreview({{ $contrato->id }});">
+                        onclick="abrirModal({titulo: 'Término de contrato', vista: 'vista-terminar-contrato-{{ $contrato->id }}', size: 'modal-xl'}); window.initTerminacionContratoPreview && window.initTerminacionContratoPreview({{ $contrato->id }});">
                     <i class="ti ti-door-exit"></i> Terminar contrato
                 </button>
             </div>
 
             <div id="vista-terminar-contrato-{{ $contrato->id }}" class="d-none">
                 <div class="terminacion-preview" data-contrato-id="{{ $contrato->id }}" data-garantia="{{ (int) $contrato->garantia }}">
-
-                    <h5>Vista previa de término de contrato</h5>
-                    <p class="text-muted mb-3">Esta vista previa no termina el contrato ni guarda cambios. Inspeccioná la propiedad antes de confirmar cualquier devolución; servicios y gastos comunes proporcionales son avisos automáticos de esta vista previa.</p>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <div class="border rounded p-3 h-100">
-                                <div class="text-muted small">Fecha de inicio</div>
-                                <strong>{{ $formatDate($contrato->fecha_inicio) }}</strong>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="border rounded p-3 h-100">
-                                <div class="text-muted small">Fecha de término</div>
-                                <strong>{{ $today }}</strong>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="border rounded p-3 h-100">
-                                <div class="text-muted small">Garantía original</div>
-                                <strong>{{ $formatMoney($contrato->garantia) }}</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if($pendingCobros->isNotEmpty())
-                    <div class="border border-warning rounded bg-warning-subtle text-warning-emphasis p-3 mb-3" role="status">
-                        <strong>¡Atención!</strong>
-                        La propiedad aún tiene cobros pendientes. Revisa cada cobro antes de finalizar el contrato.
-                    </div>
-                    <h6>Cobros pendientes</h6>
-                        <div class="table-responsive mb-3" id="terminacion-pendientes-wrapper-{{ $contrato->id }}">
-                            <table class="table mb-0 text-nowrap table-hover table-card-mobile pendientes-dashboard-table ficha-pendientes-table terminacion-pendientes-table">
-                                <thead class="table-light border-light">
-                                    <tr>
-                                        <th><b>Contrato</b></th>
-                                        @if($hasArrendadorCobros)<th data-col="arrendador"><b>Cobros al Arrendador</b></th>@endif
-                                        @if($hasArrendatarioCobros)<th data-col="arrendatario"><b>Cobros al Arrendatario</b></th>@endif
-                                        @if($hasCorredorCobros)<th data-col="corredor"><b>Cobros al Corredor</b></th>@endif
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>{{ $headingLocation }}</td>
-                                        @if($hasArrendadorCobros)<td class="td-cobros text-center">@include('components._pendientes-cobros-buttons', ['cobros' => $pendingGroups['arrendador']])</td>@endif
-                                        @if($hasArrendatarioCobros)<td class="td-cobros text-center">@include('components._pendientes-cobros-buttons', ['cobros' => $pendingGroups['arrendatario']])</td>@endif
-                                        @if($hasCorredorCobros)<td class="td-cobros text-center">@include('components._pendientes-cobros-buttons', ['cobros' => $pendingGroups['corredor']])</td>@endif
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <p class="text-muted">No hay cobros pendientes para este contrato.</p>
-                    @endif
-
-                    <h6>Descuentos a la devolución de garantía</h6>
-                    <p>Puedes agregar descuentos a la devolución de garantía, como cargos por aseo o reparaciones. Selecciona el concepto, agrega un detalle y el monto correspondiente. El sistema calculará automáticamente el total a devolver al arrendatario.</p>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered align-middle mb-2 table-card-mobile pendientes-dashboard-table ficha-pendientes-table terminacion-ajustes-table">
-                            <thead>
-                                <tr>
-                                    <th>Concepto</th>
-                                    <th>Detalle</th>
-                                    <th>Monto</th>
-                                    <th class="text-end">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="terminacion-ajustes">
-                                <tr class="terminacion-row terminacion-ajuste" data-sign="charge" data-amount="0">
-                                    <td>
-                                        <select class="form-select form-select-sm terminacion-sign">
-                                            <option value="Aseo Final" selected>Aseo final</option>
-                                            <option value="Reparación">Reparación</option>
-                                            <option value="Extra">Extra</option>
-                                        </select>
-                                    </td>
-                                    <td><input type="text" class="form-control form-control-sm terminacion-description" placeholder="Detalle"></td>
-                                    <td><input type="text" class="form-control form-control-sm terminacion-amount" value="$0"></td>
-                                    <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger terminacion-remove">Quitar</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <button type="button" class="btn btn-sm btn-outline-primary terminacion-add">Agregar descuento</button>
-
-                    <div class="alert alert-danger mt-3 d-none terminacion-validation-error" role="alert"></div>
-
-                    <div class="border border-warning rounded bg-warning-subtle text-warning-emphasis p-3 mt-3 d-none" role="status" data-terminacion-full-refund-warning="true">
-                        <strong>¡Atención!</strong>
-                        se devolverá la garantía en su totalidad al arrendatario. ¿Está seguro que no hay reparaciones o aseo que pagar?
-                    </div>
-
-                    <div class="row g-3 mt-3">
-                        <div class="col-md-4">
-                            <div class="border rounded p-3 h-100">
-                                <div class="text-muted small">Total descuentos</div>
-                                <strong class="terminacion-neto">$0</strong>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="border rounded p-3 h-100">
-                                <div class="text-muted small">Garantía</div>
-                                <strong class="terminacion-garantia">{{ $formatMoney($contrato->garantia) }}</strong>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="border rounded p-3 h-100">
-                                <div class="text-muted small">Monto a devolver al arrendatario</div>
-                                <strong class="terminacion-total">{{ $formatMoney($contrato->garantia) }}</strong>
-                            </div>
-                        </div>
-                    </div>
-
+                    <h6>Días proporcionales de renta</h6>
+                    <p class="text-muted mb-3">Al terminar un contrato, se generará el cobro pendiente proporcional de renta entre el día de pago y la fecha de término del contrato.</p>
+                    <table>
+                        <tr>
+                            <td>Día de pago:</td>
+                            <td>5</td>
+                        </tr>
+                        <tr>
+                            <td>Día de término de contrato:</td>
+                            <td>11</td>
+                        </tr>
+                         <tr>
+                            <td>Renta</td>
+                            <td>$300.000.-</td>
+                        </tr>
+                        <tr>
+                            <td>Cantidad de días del mes:</td>
+                            <td>30</td>
+                        </tr>
+                        <tr>
+                            <td>Valor día proporcional:</td>
+                            <td>$10.000.-</td>
+                        </tr>
+                        <tr>
+                            <td>Días proporcionales:</td>
+                            <td>6</td>
+                        </tr>
+                        <tr>
+                            <td>Total Días proporcionales:</td>
+                            <td>$60.000.-</td>
+                        </tr>
+                    </table>
+                    <h6>Días proporcionales de servicios</h6>
+                    <p class="text-muted mb-3">Al mes siguiente, cuando llegue la boleta de los servicios, también se cobrará el proporcional de los días de uso entre el día de pago y la fecha de término del contrato.</p>
+                    <h6>Devolución de garantía</h6>
+                    <p class="text-muted mb-3">Se generará también el cobro de la Devolución de Garantía, por lo que a partir del término de contrato, tiene 30 días para realizar la transferencia al arrendatario de la garantía que pagó en un comienzo. El pago se realiza del mismo modo que los demás cobros, con la salvedad de que ahí podrá ingresar los descuentos que deben realizarse, como reparaciones, aseo y extras. </p>
                     <div class="text-end mt-3">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                         <button type="button" class="btn btn-danger terminacion-confirm">Terminar contrato</button>
@@ -396,109 +318,8 @@
 @once
     <script>
         (function () {
-            function parseCLP(value) {
-                if (window.stripCLP) return parseInt(window.stripCLP(value), 10) || 0;
-                return parseInt(String(value || '').replace(/\D/g, ''), 10) || 0;
-            }
-
-            function formatCLP(value) {
-                if (window.formatCLP) return window.formatCLP(value);
-                return '$' + (parseInt(value, 10) || 0).toLocaleString('es-CL');
-            }
-
-            function recalculate(preview) {
-                var garantia = parseInt(preview.dataset.garantia || '0', 10) || 0;
-                var discounts = 0;
-                var warning = preview.querySelector('[data-terminacion-full-refund-warning="true"]');
-                var validationError = preview.querySelector('.terminacion-validation-error');
-                var adjustmentRows = preview.querySelectorAll('.terminacion-ajuste');
-
-                adjustmentRows.forEach(function (row) {
-                    var input = row.querySelector('.terminacion-amount');
-                    var amount = input ? parseCLP(input.value) : 0;
-
-                    row.dataset.amount = amount;
-                    discounts += amount;
-                });
-
-                preview.querySelector('.terminacion-neto').textContent = formatCLP(discounts);
-                preview.querySelector('.terminacion-total').textContent = formatCLP(garantia - discounts);
-                if (validationError && discounts <= garantia) {
-                    validationError.classList.add('d-none');
-                    validationError.textContent = '';
-                }
-                if (warning) warning.classList.toggle('d-none', adjustmentRows.length > 0);
-            }
-
-            function collectTerminationDiscounts(preview) {
-                return Array.from(preview.querySelectorAll('.terminacion-ajuste')).map(function (row) {
-                    var concept = row.querySelector('.terminacion-sign');
-                    var detail = row.querySelector('.terminacion-description');
-                    var amount = row.querySelector('.terminacion-amount');
-
-                    return {
-                        concepto: concept ? concept.value : 'Extra',
-                        detalle: detail ? detail.value.trim() : '',
-                        monto: amount ? parseCLP(amount.value) : 0
-                    };
-                }).filter(function (discount) {
-                    return discount.monto > 0;
-                });
-            }
-
-            function totalTerminationDiscounts(preview) {
-                return collectTerminationDiscounts(preview).reduce(function (total, discount) {
-                    return total + discount.monto;
-                }, 0);
-            }
-
-            function validateTerminationDiscounts(preview) {
-                var garantia = parseInt(preview.dataset.garantia || '0', 10) || 0;
-                var validationError = preview.querySelector('.terminacion-validation-error');
-                var valid = totalTerminationDiscounts(preview) <= garantia;
-
-                if (validationError) {
-                    validationError.classList.toggle('d-none', valid);
-                    validationError.textContent = valid ? '' : 'Los descuentos no pueden superar la garantía.';
-                }
-
-                return valid;
-            }
-
-            function createAdjustmentRow() {
-                var row = document.createElement('tr');
-                row.className = 'terminacion-row terminacion-ajuste';
-                row.dataset.sign = 'charge';
-                row.dataset.amount = '0';
-                row.innerHTML = '<td><select class="form-select form-select-sm terminacion-sign">'
-                    + '<option value="Aseo Final" selected>Aseo final</option>'
-                    + '<option value="Reparación">Reparación</option>'
-                    + '<option value="Extra">Extra</option>'
-                    + '</select></td>'
-                    + '<td><input type="text" class="form-control form-control-sm terminacion-description" placeholder="Detalle"></td>'
-                    + '<td><input type="text" class="form-control form-control-sm terminacion-amount" value="$0"></td>'
-                    + '<td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger terminacion-remove">Quitar</button></td>';
-
-                return row;
-            }
-
-            function addAdjustment(preview) {
-                var tbody = preview.querySelector('.terminacion-ajustes');
-                var sourceRow = tbody.querySelector('.terminacion-ajuste');
-                var row = sourceRow ? sourceRow.cloneNode(true) : createAdjustmentRow();
-                row.dataset.sign = 'charge';
-                row.dataset.amount = '0';
-                row.querySelector('.terminacion-sign').value = 'Aseo Final';
-                var description = row.querySelector('.terminacion-description');
-                description.value = '';
-                description.placeholder = 'Detalle';
-                row.querySelector('.terminacion-amount').value = '$0';
-                tbody.appendChild(row);
-                recalculate(preview);
-            }
-
             function labelTerminacionTables(preview) {
-                preview.querySelectorAll('.terminacion-pendientes-table, .terminacion-ajustes-table').forEach(function (table) {
+                preview.querySelectorAll('.terminacion-pendientes-table').forEach(function (table) {
                     var headers = Array.from(table.querySelectorAll('thead th')).map(function (th) {
                         return th.textContent.trim();
                     });
@@ -508,11 +329,6 @@
                         });
                     });
                 });
-            }
-
-            function removeAdjustment(row, preview) {
-                row.remove();
-                recalculate(preview);
             }
 
             function nextTerminacionModalZIndex(modalEl) {
@@ -657,10 +473,6 @@
             }
 
             async function terminateContract(preview, btn) {
-                if (!validateTerminationDiscounts(preview)) {
-                    return;
-                }
-
                 var contractId = preview.dataset.contratoId;
                 try {
                     btn.disabled = true;
@@ -672,9 +484,7 @@
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                         },
-                        body: JSON.stringify({
-                            descuentos: collectTerminationDiscounts(preview)
-                        })
+                        body: JSON.stringify({})
                     });
                     var json = await res.json();
 
@@ -719,34 +529,13 @@
                     var preview = document.querySelector('#modalPrincipalBody .terminacion-preview[data-contrato-id="' + contractId + '"]');
                     if (preview) {
                         labelTerminacionTables(preview);
-                        recalculate(preview);
                     }
                 }, 0);
             };
 
-            document.addEventListener('input', function (event) {
-                var preview = event.target.closest('.terminacion-preview');
-                if (!preview) return;
-                if (event.target.classList.contains('terminacion-amount') && window.handleCLPInput) {
-                    window.handleCLPInput(event.target);
-                }
-                recalculate(preview);
-            });
-
-            document.addEventListener('change', function (event) {
-                var preview = event.target.closest('.terminacion-preview');
-                if (preview) recalculate(preview);
-            });
-
             document.addEventListener('click', function (event) {
                 var preview = event.target.closest('.terminacion-preview');
                 if (!preview) return;
-                if (event.target.classList.contains('terminacion-add')) addAdjustment(preview);
-                if (event.target.classList.contains('terminacion-remove')) {
-                    var row = event.target.closest('.terminacion-ajuste');
-                    if (!row) return;
-                    removeAdjustment(row, preview);
-                }
                 if (event.target.classList.contains('terminacion-confirm')) terminateContract(preview, event.target);
             });
 

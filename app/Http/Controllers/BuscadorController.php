@@ -7,6 +7,7 @@ use App\Models\Unidad;
 use App\Models\Cliente;
 use App\Models\Nacionalidad;
 use App\Models\Ciudad;
+use App\Models\Empresa;
 
 
 class BuscadorController extends Controller
@@ -27,7 +28,6 @@ class BuscadorController extends Controller
                 ->get();
             foreach ($resultados_unidad as $item) {
                 $resultados[] = [
-                    'id'    => $item->id,
                     'tipo'  => 'unidad',
                     'texto' => $this->getSearchText($item, ["nombre"]),
                     'url'   => '/unidad/' . $item->id,
@@ -42,10 +42,9 @@ class BuscadorController extends Controller
                 ->get();
             foreach ($resultados_cliente as $item) {
                 $resultados[] = [
-                    'id'    => $item->id,
                     'tipo'  => 'cliente',
                     'texto' => $this->getSearchText($item, ["nombre"]),
-                    'url'   => '/cliente/ficha/' . $item->id,
+                    'url'   => '/cliente/' . $item->id,
                 ];
             }
         }
@@ -57,7 +56,6 @@ class BuscadorController extends Controller
                 ->get();
             foreach ($resultados_nacionalidad as $item) {
                 $resultados[] = [
-                    'id'    => $item->id,
                     'tipo'  => 'nacionalidad',
                     'texto' => $this->getSearchText($item, ["nombre"]),
                     'url'   => '/nacionalidad/' . $item->id,
@@ -72,10 +70,23 @@ class BuscadorController extends Controller
                 ->get();
             foreach ($resultados_ciudad as $item) {
                 $resultados[] = [
-                    'id'    => $item->id,
                     'tipo'  => 'ciudad',
                     'texto' => $this->getSearchText($item, ["nombre"]),
                     'url'   => '/ciudad/' . $item->id,
+                ];
+            }
+        }
+
+        if ($request->has('empresa')) {
+            $resultados_empresa = \App\Models\Empresa::query()
+                ->where('nombre', 'LIKE', "%{$q}%")
+                ->limit(10)
+                ->get();
+            foreach ($resultados_empresa as $item) {
+                $resultados[] = [
+                    'tipo'  => 'empresa',
+                    'texto' => $this->getSearchText($item, ["nombre"]),
+                    'url'   => '/empresa/' . $item->id,
                 ];
             }
         }

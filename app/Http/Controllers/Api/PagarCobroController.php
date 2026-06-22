@@ -9,6 +9,7 @@ use App\Models\DestinoTransaccion;
 use App\Models\OrigenTransaccion;
 use App\Models\Transaccion;
 use App\Models\TransaccionCobro;
+use App\Services\TerminarContratoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -29,6 +30,12 @@ class PagarCobroController extends Controller
         if (! in_array($cobro->estado, ['Pendiente', 'Vencido'], true)) {
             return response()->json([
                 'errors' => ['cobro_id' => ['El cobro no se encuentra en estado pendiente o vencido']],
+            ], 422);
+        }
+
+        if ($cobro->tipo === TerminarContratoService::TIPO_DEVOLUCION_GARANTIA) {
+            return response()->json([
+                'errors' => ['cobro_id' => ['La devolución de garantía debe finalizarse desde Devolver garantía']],
             ], 422);
         }
 

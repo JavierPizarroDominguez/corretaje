@@ -38,6 +38,10 @@ class CobroConceptoFormatter
                 return "Renta $mesAno";
             case 'Egreso Renta Arrendador':
                 return "Transferir renta $mesAno";
+            case 'Ingreso Proporcional Renta Arrendatario':
+                return "Renta proporcional $mesAno";
+            case 'Egreso Proporcional Renta Arrendador':
+                return "Transferir renta proporcional $mesAno";
             case 'Luz':
             case 'Agua':
             case 'Gas':

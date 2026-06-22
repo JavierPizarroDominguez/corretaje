@@ -26,6 +26,7 @@
         </div>
     </div>
 </div>
+@include('components.guarantee-refund-modal')
 @endsection
 
 @push('scripts')
@@ -226,6 +227,11 @@
 
         const cobro = JSON.parse(e.target.dataset.cobro);
 
+        if (cobro.is_guarantee_refund && typeof window.openGuaranteeRefundModal === 'function') {
+            openGuaranteeRefundModal(cobro);
+            return;
+        }
+
         const body = document.getElementById('modal-body-cobro');
 
         const montoFormateado = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(cobro.monto);
@@ -255,7 +261,11 @@
     });
 
     // ---- Flash modal ----
-    function mostrarMensaje(titulo, mensaje, tipo = 'success') {
+    window.afterGuaranteeRefundFinalized = function () {
+        cargarFichaPendientes(paginaActual);
+    };
+
+    window.mostrarMensaje = function mostrarMensaje(titulo, mensaje, tipo = 'success') {
         const modalHtml = `
             <div class="modal fade" id="modalMensaje" tabindex="-1">
                 <div class="modal-dialog modal-dialog-centered">
@@ -283,4 +293,6 @@
         modal.show();
     }
 </script>
+
+@include('components.guarantee-refund-scripts')
 @endpush

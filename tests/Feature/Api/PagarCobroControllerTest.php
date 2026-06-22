@@ -74,6 +74,22 @@ class PagarCobroControllerTest extends TestCase
         $this->assertDatabaseHas('cobro', ['id' => $cobro->id, 'estado' => 'Pagado']);
     }
 
+    public function test_rejects_guarantee_refund_in_generic_payment_flow(): void
+    {
+        $cobro = $this->crearCobroPagable('Pendiente', 500000);
+        $cobro->tipo = 'Devolución Garantía Arrendatario';
+        $cobro->save();
+
+        $response = $this->postJson('/api/cobro/pagar', ['cobro_id' => $cobro->id]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['cobro_id']);
+
+        $this->assertDatabaseHas('cobro', ['id' => $cobro->id, 'estado' => 'Pendiente']);
+        $this->assertSame(0, TransaccionCobro::where('Cobro_id', $cobro->id)->count());
+        $this->assertSame(0, Transaccion::count());
+    }
+
     public function test_pays_vencido_cobro_successfully(): void
     {
         $cobro = $this->crearCobroPagable('Vencido', 300000);

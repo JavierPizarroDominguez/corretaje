@@ -12,6 +12,7 @@ use App\Models\Servicio;
 use App\Models\Unidad;
 use App\Models\Cliente;
 use App\Services\CobroConceptoFormatter;
+use App\Services\GarantiaRefundMetadata;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class FichaPropiedadController extends Controller
@@ -136,7 +137,7 @@ class FichaPropiedadController extends Controller
                 'servicio_id' => $cobro->Servicio_id,
                 'fecha_cobro' => $cobro->fecha_cobro ? $cobro->fecha_cobro->toISOString() : null,
                 'concepto' => $cobro->concepto,
-            ];
+            ] + GarantiaRefundMetadata::forCobro($cobro);
 
             // Bucket by role
             $rolBucket = null;

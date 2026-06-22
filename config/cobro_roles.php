@@ -38,6 +38,20 @@ return [
             'requires_servicio' => false,
             'servicio_tipo' => null,
         ],
+        'Ingreso Proporcional Renta Arrendatario' => [
+            'deudor_rol' => 'Arrendatario',
+            'acreedor_rol' => 'Corredor',
+            'requires_contract' => true,
+            'requires_servicio' => false,
+            'servicio_tipo' => null,
+        ],
+        'Egreso Proporcional Renta Arrendador' => [
+            'deudor_rol' => 'Corredor',
+            'acreedor_rol' => 'Arrendador',
+            'requires_contract' => true,
+            'requires_servicio' => false,
+            'servicio_tipo' => null,
+        ],
         'Comision inicial arrendador' => [
             'deudor_rol' => 'Arrendador',
             'acreedor_rol' => 'Corredor',

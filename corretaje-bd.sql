@@ -280,6 +280,8 @@ CREATE TABLE IF NOT EXISTS `Cobro` (
    `tipo`        ENUM(
                   'Ingreso Renta Arrendatario',
                   'Egreso Renta Arrendador',
+                  'Ingreso Proporcional Renta Arrendatario',
+                  'Egreso Proporcional Renta Arrendador',
                   'Comision inicial arrendador',
                   'Comision inicial arrendatario',
                   'Comision Mensual',

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cobro;
 use App\Models\Propiedad;
 use App\Services\CobroConceptoFormatter;
+use App\Services\GarantiaRefundMetadata;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -131,7 +132,7 @@ class ClientePendientesController extends Controller
             'unidad_nombre' => $cobro->unidad?->nombre ?? $cobro->contrato?->unidad?->nombre,
             'fecha_cobro' => $cobro->fecha_cobro ? Carbon::parse($cobro->fecha_cobro)->toIso8601String() : null,
             'concepto' => CobroConceptoFormatter::format($cobro->tipo, $cobro->fecha_cobro ? Carbon::parse($cobro->fecha_cobro) : null),
-        ];
+        ] + GarantiaRefundMetadata::forCobro($cobro);
     }
 
     /**

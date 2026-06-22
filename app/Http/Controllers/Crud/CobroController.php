@@ -67,7 +67,7 @@ class CobroController extends Controller
             // [GEN:START:validation_rules]
             'fecha_cobro' => 'sometimes|required|date',
             'estado' => 'sometimes|required|in:Pagado,Incompleto,Pendiente,Vencido,Anulado',
-            'tipo' => 'sometimes|required|in:Ingreso Renta Arrendatario,Egreso Renta Arrendador,Comision inicial arrendador,Comision inicial arrendatario,Comision Mensual,Ingreso Garantía Arrendatario,Egreso Garantía Arrendador,Devolución Garantía Arrendatario,Aseo Final,Luz,Agua,Gas,Gastos comunes,Reparación,Extra,Devolución',
+            'tipo' => 'sometimes|required|in:Ingreso Renta Arrendatario,Egreso Renta Arrendador,Ingreso Proporcional Renta Arrendatario,Egreso Proporcional Renta Arrendador,Comision inicial arrendador,Comision inicial arrendatario,Comision Mensual,Ingreso Garantía Arrendatario,Egreso Garantía Arrendador,Devolución Garantía Arrendatario,Aseo Final,Luz,Agua,Gas,Gastos comunes,Reparación,Extra,Devolución',
             'monto' => 'sometimes|nullable|integer',
             'detalle' => 'sometimes|nullable|string',
             'Contrato_id' => 'sometimes|nullable|integer|exists:contrato,id',
@@ -302,7 +302,7 @@ class CobroController extends Controller
             // [GEN:START:validation_rules]
             'fecha_cobro' => 'sometimes|required|date',
             'estado' => 'sometimes|required|in:Pagado,Incompleto,Pendiente,Vencido,Anulado',
-            'tipo' => 'sometimes|required|in:Ingreso Renta Arrendatario,Egreso Renta Arrendador,Comision inicial arrendador,Comision inicial arrendatario,Comision Mensual,Ingreso Garantía Arrendatario,Egreso Garantía Arrendador,Devolución Garantía Arrendatario,Aseo Final,Luz,Agua,Gas,Gastos comunes,Reparación,Extra,Devolución',
+            'tipo' => 'sometimes|required|in:Ingreso Renta Arrendatario,Egreso Renta Arrendador,Ingreso Proporcional Renta Arrendatario,Egreso Proporcional Renta Arrendador,Comision inicial arrendador,Comision inicial arrendatario,Comision Mensual,Ingreso Garantía Arrendatario,Egreso Garantía Arrendador,Devolución Garantía Arrendatario,Aseo Final,Luz,Agua,Gas,Gastos comunes,Reparación,Extra,Devolución',
             'monto' => 'sometimes|nullable|integer',
             'detalle' => 'sometimes|nullable|string',
             'Contrato_id' => 'sometimes|nullable|integer|exists:contrato,id',

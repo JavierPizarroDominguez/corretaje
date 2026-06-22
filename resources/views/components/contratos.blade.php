@@ -69,7 +69,90 @@
         $hasArrendadorCobros = count($pendingGroups['arrendador']) > 0;
         $hasArrendatarioCobros = count($pendingGroups['arrendatario']) > 0;
         $hasCorredorCobros = count($pendingGroups['corredor']) > 0;
+        $terminatedModalTitle = 'Contrato de ' . ($arrendatario?->nombre ?? 'Sin arrendatario');
     @endphp
+
+    @if(! $showTerminationAction)
+        <div class="mb-1">
+            <button type="button"
+                    class="btn btn-sm btn-secondary w-100 text-center"
+                    onclick="abrirModal({titulo: @js($terminatedModalTitle), vista: 'vista-contrato-terminado-{{ $contrato->id }}', size: 'modal-lg'})">
+                {{ $terminatedModalTitle }}
+            </button>
+        </div>
+
+        <div class="d-none">
+            <div id="vista-contrato-terminado-{{ $contrato->id }}">
+                <h5 class="mb-3">
+                    Contrato —
+                    {{ $headingLocation }}
+                </h5>
+                <table class="table table-bordered">
+                    <tr>
+                        <td><b>Renta</b></td>
+                        <td>{{ $formatMoney($contrato->renta) }}</td>
+                    </tr>
+                    <tr>
+                        <td><b>Día de pago</b></td>
+                        <td>{{ $contrato->dia_pago }}</td>
+                    </tr>
+                    <tr>
+                        <td><b>Arrendador</b></td>
+                        <td>
+                            @if($arrendador)
+                                <a href="{{ route('fichacliente.show', $arrendador->id) }}">
+                                    {{ $arrendador->nombre }}
+                                </a>
+                            @else
+                                Sin arrendador
+                            @endif
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><b>Arrendatario</b></td>
+                        <td>
+                            @if($arrendatario)
+                                <a href="{{ route('fichacliente.show', $arrendatario->id) }}">
+                                    {{ $arrendatario->nombre }}
+                                </a>
+                            @else
+                                Sin arrendatario
+                            @endif
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><b>Corredor</b></td>
+                        <td>
+                            @if($corredor)
+                                <a href="{{ route('fichacliente.show', $corredor->id) }}">
+                                    {{ $corredor->nombre }}
+                                </a>
+                            @else
+                                Sin corredor
+                            @endif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><b>Garantía</b></td>
+                        <td>{{ $formatMoney($contrato->garantia) }}</td>
+                    </tr>
+
+                    <tr>
+                        <td><b>Fecha Inicio</b></td>
+                        <td>{{ $formatDate($contrato->fecha_inicio) }}</td>
+                    </tr>
+
+                    <tr>
+                        <td><b>Fecha Término</b></td>
+                        <td>{{ $formatDate($contrato->fecha_termino) }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        @continue
+    @endif
 
     <div class="card mb-4" @if($showTerminationAction) data-terminacion-contract-card="{{ $contrato->id }}" @endif>
 
